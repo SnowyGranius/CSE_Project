@@ -2,10 +2,10 @@ Porosity:
   Triangle has a narrower distribution and higher porosity for the same packing fraction. Square has a wide distribution and lower porosity.
 
 Surface: 
-  Rectangle slightly higher surface for the same pf.
+  Narrower distribution and smaller values for triangle.
 
 Euler mean volume:
   Same between the shapes for every pf, control Minkowski.
 
 Permeability/Energy:
-  Shoots up for the smallest pf. Rectangle noticeably less permeable
+  Rectangle is less permeable than triangle for high pf, but performs better than triangle for a lower pf.
