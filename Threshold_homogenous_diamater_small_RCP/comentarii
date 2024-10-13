@@ -1,1 +1,8 @@
+Porosity:
+  Very high variance between the shapes. Rectangle in the middle
 
+Surface:
+  Ellipse sees higher surface values compared to rectangle and triangle.
+
+Permeability/Energy:
+  Ellipse performs noticeably worse than triangle/rectangle.
