@@ -46,7 +46,9 @@ for sub_path in path_list:
     variance_porosity_rectangle = variance_df_rectangle['Porosity_variance']
     variance_permeability_rectangle = variance_df_rectangle['Permeability_variance']
     variance_surface_rectangle = variance_df_rectangle['Surface_variance']
-    print(variance_porosity_rectangle)
+    mean_porosity_rectangle = variance_df_rectangle['Porosity_mean']
+    mean_permeability_rectangle = variance_df_rectangle['Permeability_mean']
+    mean_surface_rectangle = variance_df_rectangle['Surface_mean']
 
 
     # concatenated_df_rectangle['Permeability'] = concatenated_df_rectangle['Permeability'] * 1e5
@@ -65,14 +67,20 @@ for sub_path in path_list:
     variance_porosity_triangle = variance_df_triangle['Porosity_variance']
     variance_permeability_triangle = variance_df_triangle['Permeability_variance']
     variance_surface_triangle = variance_df_triangle['Surface_variance']
+    mean_porosity_triangle = variance_df_triangle['Porosity_mean']
+    mean_permeability_triangle = variance_df_triangle['Permeability_mean']
+    mean_surface_triangle = variance_df_triangle['Surface_mean']
     #print(variance_porosity_triangle)
+    print(variance_df_triangle*mean_porosity_triangle)
 
 
     # concatenated_df_triangle['Permeability'] = concatenated_df_triangle['Permeability'] * 1e5
     # concatenated_df_triangle['Energy'] = concatenated_df_triangle['Energy'] * 1e5
 
-    filename_to_check=os.path.join(path, "*ellipse*.csv")
-    if os.path.exists(filename_to_check):
+    #filename_to_check=os.path.join(path, "*ellipse*.csv")
+    if (path == 'E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie\Heterogenous_samples'):
+        pass
+    else:
         all_files = glob.glob(os.path.join(path, "*ellipse*.csv"))
         df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
         concatenated_df_ellipse = pd.concat(df_from_each_file, ignore_index=True)
@@ -85,25 +93,29 @@ for sub_path in path_list:
         variance_porosity_ellipse = variance_df_ellipse['Porosity_variance']
         variance_permeability_ellipse = variance_df_ellipse['Permeability_variance']
         variance_surface_ellipse = variance_df_ellipse['Surface_variance']
+        mean_porosity_ellipse = variance_df_ellipse['Porosity_mean']
+        mean_permeability_ellipse = variance_df_ellipse['Permeability_mean']
+        mean_surface_ellipse = variance_df_ellipse['Surface_mean']
 
-        sigma_porosity_ellipse = np.sqrt(variance_porosity_ellipse)
-        sigma_permeability_ellipse = np.sqrt(variance_permeability_ellipse)
-        sigma_surface_ellipse = np.sqrt(variance_surface_ellipse)
+        print(variance_porosity_ellipse*mean_porosity_ellipse)
+        print(variance_permeability_ellipse*mean_permeability_ellipse)
+        print(variance_surface_ellipse*mean_surface_ellipse)
 
-    else:
-        pass
+        sigma_porosity_ellipse = np.sqrt(variance_porosity_ellipse) * mean_porosity_ellipse
+        sigma_permeability_ellipse = np.sqrt(variance_permeability_ellipse) * mean_permeability_ellipse
+        sigma_surface_ellipse = np.sqrt(variance_surface_ellipse) * mean_surface_ellipse
 
     # concatenated_df_ellipse['Permeability'] = concatenated_df_ellipse['Permeability'] * 1e5
     # concatenated_df_ellipse['Energy'] = concatenated_df_ellipse['Energy'] * 1e5
 
     # Calculate standard deviation (sigma) from variance
-    sigma_porosity_rectangle = np.sqrt(variance_porosity_rectangle)
-    sigma_permeability_rectangle = np.sqrt(variance_permeability_rectangle)
-    sigma_surface_rectangle = np.sqrt(variance_surface_rectangle)
+    sigma_porosity_rectangle = np.sqrt(variance_porosity_rectangle) * mean_porosity_rectangle
+    sigma_permeability_rectangle = np.sqrt(variance_permeability_rectangle) * mean_permeability_rectangle
+    sigma_surface_rectangle = np.sqrt(variance_surface_rectangle) * mean_surface_rectangle
 
-    sigma_porosity_triangle = np.sqrt(variance_porosity_triangle)
-    sigma_permeability_triangle = np.sqrt(variance_permeability_triangle)
-    sigma_surface_triangle = np.sqrt(variance_surface_triangle)
+    sigma_porosity_triangle = np.sqrt(variance_porosity_triangle) * mean_porosity_triangle
+    sigma_permeability_triangle = np.sqrt(variance_permeability_triangle) * mean_permeability_triangle
+    sigma_surface_triangle = np.sqrt(variance_surface_triangle) * mean_surface_triangle
 
 
 
@@ -136,14 +148,18 @@ for sub_path in path_list:
     # Plot data points
     sc1=ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], c=concatenated_df_rectangle['Euler_mean_vol'], cmap='winter', marker='s')
     sc2=ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], c=concatenated_df_triangle['Euler_mean_vol'], cmap='winter', marker='^')
-    if os.path.exists(filename_to_check):
+    if (path == 'E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie\Heterogenous_samples'):
+        pass
+    else:
         sc3=ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], c=concatenated_df_ellipse['Euler_mean_vol'], cmap='winter', marker='o')
 
     # Plot box and whisker plots
     if VARIANCE==1:
         plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], sigma_porosity_rectangle, sigma_surface_rectangle, sigma_permeability_rectangle, 'blue')
         plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], sigma_porosity_triangle, sigma_surface_triangle, sigma_permeability_triangle, 'red')
-        if os.path.exists(filename_to_check):
+        if (path == 'E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie\Heterogenous_samples'):
+            pass
+        else:
             plot_box_and_whisker(ax, concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], sigma_porosity_ellipse, sigma_surface_ellipse, sigma_permeability_ellipse, 'green')
 
     # Set axis labels
@@ -154,9 +170,20 @@ for sub_path in path_list:
     ax.set_title('Box and Whisker Plots for ' + sub_path.replace('_', ' '))
     #set log scale permeability and set limits
     ax.set_zscale('log')
-    ax.set_xlim([concatenated_df_rectangle['Porosity'].min(), concatenated_df_rectangle['Porosity'].max()])
-    ax.set_ylim([concatenated_df_rectangle['Surface'].min(), concatenated_df_rectangle['Surface'].max()])
-    ax.set_zlim([concatenated_df_rectangle['Permeability'].min(), concatenated_df_rectangle['Permeability'].max()])
+    # Determine the min and max values for Porosity, Surface, and Permeability across all shapes
+    min_porosity = min(concatenated_df_rectangle['Porosity'].min(), concatenated_df_triangle['Porosity'].min())
+    max_porosity = max(concatenated_df_rectangle['Porosity'].max(), concatenated_df_triangle['Porosity'].max())
+    
+    min_surface = min(concatenated_df_rectangle['Surface'].min(), concatenated_df_triangle['Surface'].min())
+    max_surface = max(concatenated_df_rectangle['Surface'].max(), concatenated_df_triangle['Surface'].max())
+    
+    min_permeability = min(concatenated_df_rectangle['Permeability'].min(), concatenated_df_triangle['Permeability'].min())
+    max_permeability = max(concatenated_df_rectangle['Permeability'].max(), concatenated_df_triangle['Permeability'].max())
+
+    # Set axis limits based on the min and max values
+    ax.set_xlim([min_porosity, max_porosity])
+    ax.set_ylim([min_surface, max_surface])
+    ax.set_zlim([min_permeability, max_permeability])
     ax.view_init(elev=25, azim=160)  # Adjust the elevation and azimuthal angles as needed
 
     # Add color bar
