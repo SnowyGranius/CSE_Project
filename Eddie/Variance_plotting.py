@@ -23,10 +23,11 @@ VARIANCE=1
 # # Read the data from the csv file
 # df = pd.read_csv('C:\\Users\\ionst\\Documents\\Fisiere Python\\Proiect\\Data\Datasets\\Heterogenous_samples\\Minkowskis_pf_0.220_rectangle_1_hetero.csv')
 # print(df)
+script_dir = os.path.dirname(__file__)
 
 # Read all relevant files in the folder
 path_list=['Heterogenous_samples', 'Threshold_homogenous_diameter_small_RCP', 'Threshold_homogenous_diameter_wide_RCP', 'Porespy_homogenous_diameter']
-base_path='E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie'
+base_path=script_dir  #'E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie'
 for sub_path in path_list:
     path=os.path.join(base_path, sub_path)
     print(path)
@@ -71,14 +72,14 @@ for sub_path in path_list:
     mean_permeability_triangle = variance_df_triangle['Permeability_mean']
     mean_surface_triangle = variance_df_triangle['Surface_mean']
     #print(variance_porosity_triangle)
-    print(variance_df_triangle*mean_porosity_triangle)
+    #print(variance_df_triangle*mean_porosity_triangle)
 
 
     # concatenated_df_triangle['Permeability'] = concatenated_df_triangle['Permeability'] * 1e5
     # concatenated_df_triangle['Energy'] = concatenated_df_triangle['Energy'] * 1e5
 
     #filename_to_check=os.path.join(path, "*ellipse*.csv")
-    if (path == 'E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie\Heterogenous_samples'):
+    if (sub_path == 'Heterogenous_samples'):
         pass
     else:
         all_files = glob.glob(os.path.join(path, "*ellipse*.csv"))
@@ -148,7 +149,7 @@ for sub_path in path_list:
     # Plot data points
     sc1=ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], c=concatenated_df_rectangle['Euler_mean_vol'], cmap='winter', marker='s')
     sc2=ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], c=concatenated_df_triangle['Euler_mean_vol'], cmap='winter', marker='^')
-    if (path == 'E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie\Heterogenous_samples'):
+    if (sub_path == 'Heterogenous_samples'):
         pass
     else:
         sc3=ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], c=concatenated_df_ellipse['Euler_mean_vol'], cmap='winter', marker='o')
@@ -157,7 +158,7 @@ for sub_path in path_list:
     if VARIANCE==1:
         plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], sigma_porosity_rectangle, sigma_surface_rectangle, sigma_permeability_rectangle, 'blue')
         plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], sigma_porosity_triangle, sigma_surface_triangle, sigma_permeability_triangle, 'red')
-        if (path == 'E:\TU Delft\BSc 3\CSE Minor\TW3715TU Project A\Minkowskis_project\Eddie\Heterogenous_samples'):
+        if (sub_path == 'Heterogenous_samples'):
             pass
         else:
             plot_box_and_whisker(ax, concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], sigma_porosity_ellipse, sigma_surface_ellipse, sigma_permeability_ellipse, 'green')
