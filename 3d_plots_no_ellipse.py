@@ -267,26 +267,77 @@ plt.show()
 
 
 ################# KOZENY-CARMAN SURFACE PLOT ################
-Y, Z = np.meshgrid(average_xdata_interp['Porosity'], average_ydata_interp)
-X = average_xdata_interp['Surface']
+# Y, Z = np.meshgrid(average_xdata_interp['Porosity'], average_ydata_interp)
+# X = average_xdata_interp['Surface']
 
-Y, Z = np.meshgrid(np.linspace(np.max(average_xdata_interp['Porosity']), np.min(average_xdata_interp['Porosity']), 100), np.linspace(np.min(average_ydata_interp), np.max([ydata_rectangle, ydata_triangle]), 100))
-X = np.linspace(np.min(average_xdata_interp['Surface']), np.max(average_xdata_interp['Surface']), 100)
-print(ydata_triangle)
+# Y, Z = np.meshgrid(np.linspace(np.max(average_xdata_interp['Porosity']), np.min(average_xdata_interp['Porosity']), 100), np.linspace(np.min(average_ydata_interp), np.max([ydata_rectangle, ydata_triangle]), 100))
+# X = np.linspace(np.min(average_xdata_interp['Surface']), np.max(average_xdata_interp['Surface']), 100)
+# print(ydata_triangle)
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+# ax.plot_surface(Y, X, Z, cmap='Blues', alpha=0.7)
+# all_colors = pd.concat([xdata_rectangle[2], xdata_triangle[2]])
+# min_color = all_colors.min()
+# max_color = all_colors.max()
+# # ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], klist, label='Kozeny-Carman Fit', color='y')
+# sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdata_rectangle[2], marker='s', cmap='winter', vmin=min_color, vmax=max_color)
+# sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
+# #sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
+# cbar = plt.colorbar(sc1, ax=ax, label='Euler')
+# ax.set_xlabel('Porosity')
+# ax.set_ylabel('Surface')
+# ax.set_zlabel('Permeability')
+# ax.view_init(elev=20, azim=205)
+# plt.savefig(os.path.join(path, 'kozeny_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+# plt.show()
+
+
+################## EXPONENTIAL SURFACE ##################
+def exponential_surface(XY, a, b, c):
+    x, y = XY
+    return a * np.exp(b*x) * np.exp(c*y)
+
+def cubic_surface(XY, a, b, c, d, e):
+    x, y = XY
+    return a + b*x + c*y + d*x**2 + e*y**2
+
+# Prepare data for fitting
+XY = np.vstack((concated_df['Porosity'], concated_df['Surface']))
+X = concated_df['Porosity']
+Y = concated_df['Surface']
+Z = concated_df['Permeability']
+popt_exp, _ = opt.curve_fit(exponential_surface, XY, Z, p0=(1, 0.01, 0.01))  # Initial guesses for a, b, c
+popt_poly, _ = opt.curve_fit(cubic_surface, XY, Z, p0=(1, 1, 1, 1, 1))  # Initial guesses for a, b, c, d, e, f
+
+# Extract optimal parameters
+a, b, c = popt_exp
+# a, b, c, d, e = popt_poly
+print(popt_exp)
+
+# Create a meshgrid for the fitted surface
+x_grid = np.linspace(X.min(), X.max(), 30)
+y_grid = np.linspace(Y.min(), Y.max(), 30)
+x_mesh, y_mesh = np.meshgrid(x_grid, y_grid)
+z_mesh_exp = exponential_surface((x_mesh, y_mesh), a, b, c)
+# z_mesh_poly = cubic_surface((x_mesh, y_mesh), a, b, c, e, f)
+
+# Plot the original points and the fitted exponential surface
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.plot_surface(Y, X, Z, cmap='Blues', alpha=0.7)
 all_colors = pd.concat([xdata_rectangle[2], xdata_triangle[2]])
 min_color = all_colors.min()
 max_color = all_colors.max()
-# ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], klist, label='Kozeny-Carman Fit', color='y')
+# sc = ax.scatter(X, Y, Z, c=concated_df['Euler_mean_vol'], cmap='viridis', label='Data Points')
 sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdata_rectangle[2], marker='s', cmap='winter', vmin=min_color, vmax=max_color)
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
-#sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Euler')
+ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
+
+# Color bar and labels
 ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
 ax.set_zlabel('Permeability')
-ax.view_init(elev=20, azim=205)
+ax.view_init(elev=20, azim=135)
+plt.legend()
 plt.savefig(os.path.join(path, 'kozeny_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
