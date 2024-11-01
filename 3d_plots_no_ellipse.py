@@ -24,7 +24,9 @@ import scipy.optimize as opt
 plt.rcParams["figure.figsize"] = (16, 9)
 
 ################ READING ALL THE FILES IN THE FOLDER ################
-path = 'C:\\Users\\ionst\\Documents\\Fisiere_Python\\Proiect\\Data\\Datasets\\Heterogenous_samples\\'
+script_dir = os.path.dirname(__file__)
+sub_path = 'Heterogenous_samples'
+path = os.path.join(script_dir, sub_path)
 # all_files = glob.glob(os.path.join(path, "*0.300*.csv"))
 all_files = glob.glob(os.path.join(path, "*rectangle*.csv"))
 df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
