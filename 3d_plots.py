@@ -1,6 +1,6 @@
 ############ SHORT GUIDE ON HOW TO USE THIS SCRIPT ############
 # Chose from the folders given in lines 28-30
-# Change the path in line 33 to own path
+# Change the path in line 34 to own path
 # Run the script
 # The script will output the following 3D plots:
 # 1. A plot in M0, M1, M2 (colored permeability) of the data points themselves
@@ -31,8 +31,9 @@ plt.rcParams["figure.figsize"] = (16, 9)
 
 ################ READING ALL THE FILES IN THE FOLDER ################
 script_dir = os.path.dirname(__file__)
-sub_path = 'Threshold_homogenous_diameter_small_RCP'
+sub_path = 'Threshold_homogenous_diamater_small_RCP'
 path = os.path.join(script_dir, sub_path)
+print(path)
 # all_files = glob.glob(os.path.join(path, "*0.300*.csv"))
 all_files = glob.glob(os.path.join(path, "*rectangle*.csv"))
 df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
