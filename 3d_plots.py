@@ -30,7 +30,9 @@ plt.rcParams["figure.figsize"] = (16, 9)
 # Porespy_homogenous_diamater                           7000
 
 ################ READING ALL THE FILES IN THE FOLDER ################
-path = 'C:\\Users\\ionst\\Documents\\Fisiere_Python\\Proiect\\Data\\Datasets\\Threshold_homogenous_diamater_small_RCP\\'
+script_dir = os.path.dirname(__file__)
+sub_path = 'Threshold_homogenous_diameter_small_RCP'
+path = os.path.join(script_dir, sub_path)
 # all_files = glob.glob(os.path.join(path, "*0.300*.csv"))
 all_files = glob.glob(os.path.join(path, "*rectangle*.csv"))
 df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
