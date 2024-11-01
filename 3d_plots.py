@@ -32,7 +32,7 @@ VARIANCE=True
 
 ################ READING ALL THE FILES IN THE FOLDER ################
 script_dir = os.path.dirname(__file__)
-sub_path = 'Threshold_homogenous_diamater_small_RCP'
+sub_path = 'Threshold_homogenous_diamater_wide_RCP'
 path = os.path.join(script_dir, sub_path)
 print(path)
 variance_path=os.path.join(script_dir, 'Summaries', sub_path)
@@ -379,9 +379,9 @@ def exponential_surface(XY, a, b, c):
     x, y = XY
     return a * np.exp(b*x) * np.exp(c*y)
 
-def cubic_surface(XY, a, b, c, d, e):
+def cubic_surface(XY, a, b, c, d, e, f):
     x, y = XY
-    return a + b*x + c*y + d*x**2 + e*y**2
+    return a + b*x/y + c*(x/y)**2 + d*(x/y)**3 + e*(x/y)**4 + f*(x/y)**5
 
 
 
@@ -391,11 +391,11 @@ X = concated_df['Porosity']
 Y = concated_df['Surface']
 Z = concated_df['Permeability']
 popt_exp, _ = opt.curve_fit(exponential_surface, XY, Z, p0=(1, 0.01, 0.01))  # Initial guesses for a, b, c
-popt_poly, _ = opt.curve_fit(cubic_surface, XY, Z, p0=(1, 1, 1, 1, 1))  # Initial guesses for a, b, c, d, e, f
+popt_poly, _ = opt.curve_fit(cubic_surface, XY, Z, p0=(1, 1, 1, 1, 1, 1))  # Initial guesses for a, b, c, d, e, f
 
 # Extract optimal parameters
-a, b, c = popt_exp
-# a, b, c, d, e = popt_poly
+a_exp, b_exp, c_exp = popt_exp
+a_poly, b_poly, c_poly, d_poly, e_poly, f_poly = popt_poly
 print(popt_exp)
 
 # Calculate RMSE between the surface generated and the points plotted
@@ -403,17 +403,17 @@ def calculate_rmse(actual, predicted):
     return np.sqrt(mean_squared_error(actual, predicted))
 
 # Flatten the meshgrid and calculate predicted values
-predicted_values = exponential_surface((X, Y), a, b, c)
+predicted_values = exponential_surface((X, Y), a_exp, b_exp, c_exp)
 rmse = calculate_rmse(Z, predicted_values)
 
 print(f"RMSE between the surface generated and the points plotted: {rmse}")
 
 # Create a meshgrid for the fitted surface
-x_grid = np.linspace(X.min(), X.max(), 100)
-y_grid = np.linspace(Y.min(), Y.max(), 100)
+x_grid = np.linspace(X.min(), X.max(), 20)
+y_grid = np.linspace(Y.min(), Y.max(), 20)
 x_mesh, y_mesh = np.meshgrid(x_grid, y_grid)
-z_mesh_exp = exponential_surface((x_mesh, y_mesh), a, b, c)
-# z_mesh_poly = cubic_surface((x_mesh, y_mesh), a, b, c, e, f)
+z_mesh_exp = exponential_surface((x_mesh, y_mesh), a_exp, b_exp, c_exp)
+z_mesh_poly = cubic_surface((x_mesh, y_mesh), a_poly, b_poly, c_poly, d_poly, e_poly, f_poly)
 
 # Plot the original points and the fitted exponential surface
 fig = plt.figure()
@@ -426,6 +426,7 @@ sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdat
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
 sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Euler')
+ax.plot_surface(x_mesh, y_mesh, z_mesh_poly, color='red', alpha=0.5, edgecolor='w', label='Fitted Polynomial Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
 if VARIANCE:
         plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], sigma_porosity_rectangle, sigma_surface_rectangle, sigma_permeability_rectangle, 'blue')
