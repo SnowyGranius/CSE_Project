@@ -23,6 +23,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import scipy.optimize as opt
 plt.rcParams["figure.figsize"] = (16, 9)
+VARIANCE=True
 
 # Folder options are: 
 # Threshold_homogenous_diamater_wide_RCP                8000
@@ -31,9 +32,11 @@ plt.rcParams["figure.figsize"] = (16, 9)
 
 ################ READING ALL THE FILES IN THE FOLDER ################
 script_dir = os.path.dirname(__file__)
-sub_path = 'Porespy_homogenous_diamater'
+sub_path = 'Threshold_homogenous_diamater_small_RCP'
 path = os.path.join(script_dir, sub_path)
 print(path)
+variance_path=os.path.join(script_dir, 'Summaries', sub_path)
+print(variance_path)
 # all_files = glob.glob(os.path.join(path, "*0.300*.csv"))
 all_files = glob.glob(os.path.join(path, "*rectangle*.csv"))
 df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
@@ -41,6 +44,19 @@ concatenated_df_rectangle = pd.concat(df_from_each_file, ignore_index=True)
 #print(concatenated_df_rectangle['Permeability'])
 # concatenated_df_rectangle['Permeability'] = concatenated_df_rectangle['Permeability'] * 1e5
 # concatenated_df_rectangle['Energy'] = concatenated_df_rectangle['Energy'] * 1e5
+
+#EXTRACT VARIANCE FOR RECTANGLE
+
+variance_files = glob.glob(os.path.join(variance_path, "*rectangle*.csv"))
+df_from_file = (pd.read_csv(f) for f in variance_files)
+variance_df_rectangle = pd.concat(df_from_file, ignore_index=True)
+variance_porosity_rectangle = variance_df_rectangle['Porosity_variance']
+variance_permeability_rectangle = variance_df_rectangle['Permeability_variance']
+variance_surface_rectangle = variance_df_rectangle['Surface_variance']
+mean_porosity_rectangle = variance_df_rectangle['Porosity_mean']
+mean_permeability_rectangle = variance_df_rectangle['Permeability_mean']
+mean_surface_rectangle = variance_df_rectangle['Surface_mean']
+
 
 
 all_files = glob.glob(os.path.join(path, "*triangle*.csv"))
@@ -50,6 +66,18 @@ concatenated_df_triangle = pd.concat(df_from_each_file, ignore_index=True)
 # concatenated_df_triangle['Permeability'] = concatenated_df_triangle['Permeability'] * 1e5
 # concatenated_df_triangle['Energy'] = concatenated_df_triangle['Energy'] * 1e5
 
+#EXTRACT VARIANCE FOR TRIANGLE
+
+variance_files = glob.glob(os.path.join(variance_path, "*triangle*.csv"))
+df_from_file = (pd.read_csv(f) for f in variance_files)
+variance_df_triangle = pd.concat(df_from_file, ignore_index=True)
+variance_porosity_triangle = variance_df_triangle['Porosity_variance']
+variance_permeability_triangle = variance_df_triangle['Permeability_variance']
+variance_surface_triangle = variance_df_triangle['Surface_variance']
+mean_porosity_triangle = variance_df_triangle['Porosity_mean']
+mean_permeability_triangle = variance_df_triangle['Permeability_mean']
+mean_surface_triangle = variance_df_triangle['Surface_mean']
+
 
 all_files = glob.glob(os.path.join(path, "*ellipse*.csv"))
 df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
@@ -58,14 +86,57 @@ concatenated_df_ellipse = pd.concat(df_from_each_file, ignore_index=True)
 # concatenated_df_ellipse['Permeability'] = concatenated_df_ellipse['Permeability'] * 1e5
 # concatenated_df_ellipse['Energy'] = concatenated_df_ellipse['Energy'] * 1e5
 
+if (sub_path == 'Heterogenous_samples'):
+        pass
+else:
+    all_files = glob.glob(os.path.join(path, "*ellipse*.csv"))
+    df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
+    concatenated_df_ellipse = pd.concat(df_from_each_file, ignore_index=True)
 
+    #EXTRACT VARIANCE FOR ELLIPSE
+
+    variance_files = glob.glob(os.path.join(variance_path, "*ellipse*.csv"))
+    df_from_file = (pd.read_csv(f) for f in variance_files)
+    variance_df_ellipse = pd.concat(df_from_file, ignore_index=True)
+    variance_porosity_ellipse = variance_df_ellipse['Porosity_variance']
+    variance_permeability_ellipse = variance_df_ellipse['Permeability_variance']
+    variance_surface_ellipse = variance_df_ellipse['Surface_variance']
+    mean_porosity_ellipse = variance_df_ellipse['Porosity_mean']
+    mean_permeability_ellipse = variance_df_ellipse['Permeability_mean']
+    mean_surface_ellipse = variance_df_ellipse['Surface_mean']
+
+    sigma_porosity_ellipse = np.sqrt(variance_porosity_ellipse) * mean_porosity_ellipse
+    sigma_permeability_ellipse = np.sqrt(variance_permeability_ellipse) * mean_permeability_ellipse
+    sigma_surface_ellipse = np.sqrt(variance_surface_ellipse) * mean_surface_ellipse
+
+ # Calculate standard deviation (sigma) from variance
+sigma_porosity_rectangle = np.sqrt(variance_porosity_rectangle) * mean_porosity_rectangle
+sigma_permeability_rectangle = np.sqrt(variance_permeability_rectangle) * mean_permeability_rectangle
+sigma_surface_rectangle = np.sqrt(variance_surface_rectangle) * mean_surface_rectangle
+
+sigma_porosity_triangle = np.sqrt(variance_porosity_triangle) * mean_porosity_triangle
+sigma_permeability_triangle = np.sqrt(variance_permeability_triangle) * mean_permeability_triangle
+sigma_surface_triangle = np.sqrt(variance_surface_triangle) * mean_surface_triangle
 
 
 # concated_df = pd.concat([concatenated_df_rectangle, concatenated_df_triangle], ignore_index=True)
 # concated_df = pd.concat([concatenated_df_ellipse], ignore_index=True)
 #print(concated_df)
 
-
+def plot_box_and_whisker(ax, x, y, z, sigma_x, sigma_y, sigma_z, color):
+        #debugging
+        # print(f"Length of x: {len(x)}")
+        # print(f"Length of y: {len(y)}")
+        # print(f"Length of z: {len(z)}")
+        # print(f"Length of sigma_x: {len(sigma_x)}")
+        # print(f"Length of sigma_y: {len(sigma_y)}")
+        # print(f"Length of sigma_z: {len(sigma_z)}")
+        
+        if VARIANCE:
+            for i in range(len(x)):
+                ax.plot([x[i] - sigma_x[i], x[i] + sigma_x[i]], [y[i], y[i]], [z[i], z[i]], color=color)
+                ax.plot([x[i], x[i]], [y[i] - sigma_y[i], y[i] + sigma_y[i]], [z[i], z[i]], color=color)
+                ax.plot([x[i], x[i]], [y[i], y[i]], [z[i] - sigma_z[i], z[i] + sigma_z[i]], color=color)
 
 ################ CALCULATE THE AVERAGE OF EVERY PF ################
 average_samples = []
@@ -312,6 +383,8 @@ def cubic_surface(XY, a, b, c, d, e):
     x, y = XY
     return a + b*x + c*y + d*x**2 + e*y**2
 
+
+
 # Prepare data for fitting
 XY = np.vstack((concated_df['Porosity'], concated_df['Surface']))
 X = concated_df['Porosity']
@@ -325,9 +398,19 @@ a, b, c = popt_exp
 # a, b, c, d, e = popt_poly
 print(popt_exp)
 
+# Calculate RMSE between the surface generated and the points plotted
+def calculate_rmse(actual, predicted):
+    return np.sqrt(mean_squared_error(actual, predicted))
+
+# Flatten the meshgrid and calculate predicted values
+predicted_values = exponential_surface((X, Y), a, b, c)
+rmse = calculate_rmse(Z, predicted_values)
+
+print(f"RMSE between the surface generated and the points plotted: {rmse}")
+
 # Create a meshgrid for the fitted surface
-x_grid = np.linspace(X.min(), X.max(), 30)
-y_grid = np.linspace(Y.min(), Y.max(), 30)
+x_grid = np.linspace(X.min(), X.max(), 100)
+y_grid = np.linspace(Y.min(), Y.max(), 100)
 x_mesh, y_mesh = np.meshgrid(x_grid, y_grid)
 z_mesh_exp = exponential_surface((x_mesh, y_mesh), a, b, c)
 # z_mesh_poly = cubic_surface((x_mesh, y_mesh), a, b, c, e, f)
@@ -344,6 +427,13 @@ sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_t
 sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Euler')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
+if VARIANCE:
+        plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], sigma_porosity_rectangle, sigma_surface_rectangle, sigma_permeability_rectangle, 'blue')
+        plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], sigma_porosity_triangle, sigma_surface_triangle, sigma_permeability_triangle, 'red')
+        if (sub_path == 'Heterogenous_samples'):
+            pass
+        else:
+            plot_box_and_whisker(ax, concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], sigma_porosity_ellipse, sigma_surface_ellipse, sigma_permeability_ellipse, 'green')
 
 # Color bar and labels
 ax.set_xlabel('Porosity')
@@ -351,15 +441,9 @@ ax.set_ylabel('Surface')
 ax.set_zlabel('Permeability')
 ax.view_init(elev=20, azim=135)
 plt.legend()
+
+# Add RMSE text to the plot
+ax.text2D(0.05, 0.95, f"RMSE: {10**5*rmse:.10f}e-5", transform=ax.transAxes)
+
 plt.savefig(os.path.join(path, 'kozeny_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
-
-# Calculate RMSE between the surface generated and the points plotted
-def calculate_rmse(actual, predicted):
-    return np.sqrt(mean_squared_error(actual, predicted))
-
-# Flatten the meshgrid and calculate predicted values
-predicted_values = exponential_surface((X, Y), a, b, c)
-rmse = calculate_rmse(Z, predicted_values)
-
-print(f"RMSE between the surface generated and the points plotted: {rmse}")
