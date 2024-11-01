@@ -157,6 +157,12 @@ def kozeny_carman(lst, gamma):
 def kozeny_carman_plot(m0, m1, m2, gamma):
     return gamma*m0**3/(m1**2*(1-m0)**2*m2)
 
+def kozeny_carman_new(lst, gamma):
+    return lst[0]**3/(lst[1]**2*(lst[0]+lst[1]/(2*np.sqrt(lst[2])))*gamma)
+
+def kozeny_carman_new_plot(m0, m1, m2, gamma):
+    return m0**3/(m1**2*(m0+m1/(2*np.sqrt(m2)))*gamma)
+
 xdata = [concated_df['Porosity'], concated_df['Surface'], concated_df['Euler_mean_vol']]
 ydata = concated_df['Permeability']
 
@@ -233,12 +239,14 @@ average_ydata_interp = (ydata_rectangle_interpolated + ydata_triangle_interpolat
 
 
 ################ APPLYING KOZENY-CARMAN ################
-popt, pcov = opt.curve_fit(kozeny_carman, [average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol']], average_ydata_interp)
-klist = kozeny_carman_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt)
-k = kozeny_carman(xdata, popt)
-k_rectangle = kozeny_carman(xdata_rectangle, popt)
-k_triangle = kozeny_carman(xdata_triangle, popt)
-#k_ellipse = kozeny_carman(xdata_ellipse, popt)
+popt_old, _ = opt.curve_fit(kozeny_carman, [average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol']], average_ydata_interp)
+popt_new, _ = opt.curve_fit(kozeny_carman_new, [average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol']], average_ydata_interp)
+klist_old= kozeny_carman_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt_old)
+# k = kozeny_carman(xdata, popt)
+# k_rectangle = kozeny_carman(xdata_rectangle, popt)
+# k_triangle = kozeny_carman(xdata_triangle, popt)
+# k_ellipse = kozeny_carman(xdata_ellipse, popt)
+klist_new = kozeny_carman_new_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt_new)
 
 
 
@@ -250,10 +258,10 @@ ax = fig.add_subplot(111, projection='3d')
 all_colors = pd.concat([xdata_rectangle[2], xdata_triangle[2]])
 min_color = all_colors.min()
 max_color = all_colors.max()
-ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], klist, label='Kozeny-Carman Fit', color='y')
+ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], klist_old, label='Kozeny-Carman Fit', color='y')
+ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], klist_new, label='New Kozeny-Carman Fit', color='r')
 sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdata_rectangle[2], marker='s', cmap='winter', vmin=min_color, vmax=max_color)
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
-#sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Euler')
 
 ax.set_xlabel('Porosity')
