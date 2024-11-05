@@ -32,7 +32,7 @@ VARIANCE=True
 
 ################ READING ALL THE FILES IN THE FOLDER ################
 script_dir = os.path.dirname(__file__)
-sub_path = 'Threshold_homogenous_diamater_wide_RCP'
+sub_path = 'Porespy_homogenous_diamater'
 path = os.path.join(script_dir, sub_path)
 print(path)
 variance_path=os.path.join(script_dir, 'Summaries', sub_path)
