@@ -1,6 +1,6 @@
 ############ SHORT GUIDE ON HOW TO USE THIS SCRIPT ############
-# Chose from the folders given in lines 28-30
-# Change the path in line 34 to own path
+# Chose from the folders given in lines 29-31
+# Change the path in line 35 to desired dataset folder
 # Run the script
 # The script will output the following 3D plots:
 # 1. A plot in M0, M1, M2 (colored permeability) of the data points themselves
@@ -384,6 +384,10 @@ def cubic_surface(XY, a, b, c, d, e, f):
     x, y = XY
     return a + b*x/y + c*(x/y)**2 + d*(x/y)**3 + e*(x/y)**4 + f*(x/y)**5
 
+def power_law(XY, a, b, c):
+    x, y = XY
+    return a * x**b * y**c
+
 
 
 # Prepare data for fitting
@@ -393,11 +397,13 @@ Y = concated_df['Surface']
 Z = concated_df['Permeability']
 popt_exp, _ = opt.curve_fit(exponential_surface, XY, Z, p0=(1, 0.01, 0.01))  # Initial guesses for a, b, c
 popt_poly, _ = opt.curve_fit(cubic_surface, XY, Z, p0=(1, 1, 1, 1, 1, 1))  # Initial guesses for a, b, c, d, e, f
+popt_power, _ = opt.curve_fit(power_law, XY, Z, p0=(1, 2, 2))  # Initial guesses for a, b, c
+print(popt_exp)
 
 # Extract optimal parameters
 a_exp, b_exp, c_exp = popt_exp
 a_poly, b_poly, c_poly, d_poly, e_poly, f_poly = popt_poly
-print(popt_exp)
+a_power, b_power, c_power = popt_power
 
 # Calculate RMSE between the surface generated and the points plotted
 def calculate_rmse(actual, predicted):
@@ -415,6 +421,7 @@ y_grid = np.linspace(Y.min(), Y.max(), 20)
 x_mesh, y_mesh = np.meshgrid(x_grid, y_grid)
 z_mesh_exp = exponential_surface((x_mesh, y_mesh), a_exp, b_exp, c_exp)
 z_mesh_poly = cubic_surface((x_mesh, y_mesh), a_poly, b_poly, c_poly, d_poly, e_poly, f_poly)
+z_mesh_power = power_law((x_mesh, y_mesh), a_power, b_power, c_power)
 
 # Plot the original points and the fitted exponential surface
 fig = plt.figure()
@@ -427,8 +434,9 @@ sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdat
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
 sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Euler')
-ax.plot_surface(x_mesh, y_mesh, z_mesh_poly, color='red', alpha=0.5, edgecolor='w', label='Fitted Polynomial Surface')
+# ax.plot_surface(x_mesh, y_mesh, z_mesh_poly, color='red', alpha=0.5, edgecolor='w', label='Fitted Polynomial Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
+ax.plot_surface(x_mesh, y_mesh, z_mesh_power, color='green', alpha=0.5, edgecolor='w', label='Fitted Power Law Surface')
 if VARIANCE:
         plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], sigma_porosity_rectangle, sigma_surface_rectangle, sigma_permeability_rectangle, 'blue')
         plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], sigma_porosity_triangle, sigma_surface_triangle, sigma_permeability_triangle, 'red')
