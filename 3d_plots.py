@@ -32,7 +32,7 @@ VARIANCE=True
 
 ################ READING ALL THE FILES IN THE FOLDER ################
 script_dir = os.path.dirname(__file__)
-sub_path = 'Porespy_homogenous_diamater'
+sub_path = 'Threshold_homogenous_diamater_small_RCP'
 path = os.path.join(script_dir, sub_path)
 print(path)
 variance_path=os.path.join(script_dir, 'Summaries', sub_path)
@@ -313,6 +313,7 @@ average_ydata_interp = (ydata_rectangle_interpolated + ydata_triangle_interpolat
 popt_old, _ = opt.curve_fit(kozeny_carman, [average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol']], average_ydata_interp)
 popt_new, _ = opt.curve_fit(kozeny_carman_new, [average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol']], average_ydata_interp)
 klist_old= kozeny_carman_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt_old)
+print(popt_new)
 # k = kozeny_carman(xdata, popt)
 # k_rectangle = kozeny_carman(xdata_rectangle, popt)
 # k_triangle = kozeny_carman(xdata_triangle, popt)
