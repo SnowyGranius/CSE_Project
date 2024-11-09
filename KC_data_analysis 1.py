@@ -65,6 +65,8 @@ for i, sol in enumerate(k):
     kopt, kcov = curve_fit(KC_model, (M_0[i], M_1[i], M_2[i]), [sol])
     km_vals.append(kopt)
 
+print(km_vals)
+
 # Testing vals
 M_0_hat = np.linspace(np.min(M_0), np.max(M_0), 100)
 M_1_hat = np.linspace(np.min(M_1), np.max(M_1), 100)
