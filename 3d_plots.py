@@ -25,6 +25,9 @@ import scipy.optimize as opt
 plt.rcParams["figure.figsize"] = (16, 9)
 VARIANCE=False
 
+#Set desired SD
+SD=1
+
 # Folder options are: 
 # Threshold_homogenous_diamater_wide_RCP                8000
 # Threshold_homogenous_diamater_small_RCP               5000
@@ -103,18 +106,18 @@ else:
     mean_permeability_ellipse = variance_df_ellipse['Permeability_mean']
     mean_surface_ellipse = variance_df_ellipse['Surface_mean']
 
-    sigma_porosity_ellipse = np.sqrt(variance_porosity_ellipse) * mean_porosity_ellipse
-    sigma_permeability_ellipse = np.sqrt(variance_permeability_ellipse) * mean_permeability_ellipse
-    sigma_surface_ellipse = np.sqrt(variance_surface_ellipse) * mean_surface_ellipse
+    one_sd_porosity_ellipse = variance_porosity_ellipse * mean_porosity_ellipse
+    one_sd_permeability_ellipse = variance_permeability_ellipse * mean_permeability_ellipse
+    one_sd_surface_ellipse = variance_surface_ellipse * mean_surface_ellipse
 
  # Calculate standard deviation (sigma) from variance
-sigma_porosity_rectangle = np.sqrt(variance_porosity_rectangle) * mean_porosity_rectangle
-sigma_permeability_rectangle = np.sqrt(variance_permeability_rectangle) * mean_permeability_rectangle
-sigma_surface_rectangle = np.sqrt(variance_surface_rectangle) * mean_surface_rectangle
+one_sd_porosity_rectangle = variance_porosity_rectangle * mean_porosity_rectangle
+one_sd_permeability_rectangle = variance_permeability_rectangle * mean_permeability_rectangle
+one_sd_surface_rectangle = variance_surface_rectangle * mean_surface_rectangle
 
-sigma_porosity_triangle = np.sqrt(variance_porosity_triangle) * mean_porosity_triangle
-sigma_permeability_triangle = np.sqrt(variance_permeability_triangle) * mean_permeability_triangle
-sigma_surface_triangle = np.sqrt(variance_surface_triangle) * mean_surface_triangle
+one_sd_porosity_triangle = variance_porosity_triangle * mean_porosity_triangle
+one_sd_permeability_triangle = variance_permeability_triangle * mean_permeability_triangle
+one_sd_surface_triangle = variance_surface_triangle * mean_surface_triangle
 
 
 
@@ -129,9 +132,9 @@ def plot_box_and_whisker(ax, x, y, z, sigma_x, sigma_y, sigma_z, color):
         
         if VARIANCE:
             for i in range(len(x)):
-                ax.plot([x[i] - sigma_x[i], x[i] + sigma_x[i]], [y[i], y[i]], [z[i], z[i]], color=color)
-                ax.plot([x[i], x[i]], [y[i] - sigma_y[i], y[i] + sigma_y[i]], [z[i], z[i]], color=color)
-                ax.plot([x[i], x[i]], [y[i], y[i]], [z[i] - sigma_z[i], z[i] + sigma_z[i]], color=color)
+                ax.plot([x[i] - SD*sigma_x[i], x[i] + SD*sigma_x[i]], [y[i], y[i]], [z[i], z[i]], color=color)
+                ax.plot([x[i], x[i]], [y[i] - SD*sigma_y[i], y[i] + SD*sigma_y[i]], [z[i], z[i]], color=color)
+                ax.plot([x[i], x[i]], [y[i], y[i]], [z[i] - SD*sigma_z[i], z[i] + SD*sigma_z[i]], color=color)
 
 ################ CALCULATE THE AVERAGE OF EVERY PF ################
 average_samples = []
@@ -363,12 +366,12 @@ cbar = plt.colorbar(sc1, ax=ax, label='Euler')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_power, color='green', alpha=0.5, edgecolor='w', label='Fitted Power Law Surface')
 if VARIANCE:
-        plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], sigma_porosity_rectangle, sigma_surface_rectangle, sigma_permeability_rectangle, 'blue')
-        plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], sigma_porosity_triangle, sigma_surface_triangle, sigma_permeability_triangle, 'red')
+        plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], one_sd_porosity_rectangle, one_sd_surface_rectangle, one_sd_permeability_rectangle, 'blue')
+        plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], one_sd_porosity_triangle, one_sd_surface_triangle, one_sd_permeability_triangle, 'red')
         if (sub_path == 'Heterogenous_samples'):
             pass
         else:
-            plot_box_and_whisker(ax, concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], sigma_porosity_ellipse, sigma_surface_ellipse, sigma_permeability_ellipse, 'green')
+            plot_box_and_whisker(ax, concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], one_sd_porosity_ellipse, one_sd_surface_ellipse, one_sd_permeability_ellipse, 'green')
 
 # Color bar and labels
 ax.set_xlabel('Porosity')
