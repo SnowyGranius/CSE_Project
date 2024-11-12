@@ -3,9 +3,12 @@
 # Run the script
 # The script will output the following 3D plots:
 # 1. A plot in M0, M1, M2 (colored permeability) of the data points themselves
-# 2. A plot in M0, M1, M2 (colored permeability) of the data points themselves with a best-fit plane
-# 3. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman curve
-# 4. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman best-fit surface
+# 2. A plot in M0, M1, M2 (colored permeability) of the data points themselves with a best-fit flat plane (a+b*M0+c*M1)
+# 3. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman curve (old and new)
+# 4. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman best-fit exponential (a*exp(b*M+c*M1)) and power-law (a*M0^b*M1^c) surfaces
+# 5. A plot showing the evolution of k_m with porosity
+# 6. A plot showing the fitted, theoretical and actual k_m values with porosity
+
 
 import seaborn as sns
 import numpy as np
@@ -29,11 +32,10 @@ script_dir = os.path.dirname(__file__)
 sub_path = 'Heterogenous_samples'
 path = os.path.join(script_dir, sub_path)
 variance_path=os.path.join(script_dir, 'Summaries', sub_path)
-# all_files = glob.glob(os.path.join(path, "*0.300*.csv"))
 all_files = glob.glob(os.path.join(path, "*rectangle*.csv"))
 df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
 concatenated_df_rectangle = pd.concat(df_from_each_file, ignore_index=True)
-#print(concatenated_df_rectangle['Permeability'])
+
 # concatenated_df_rectangle['Permeability'] = concatenated_df_rectangle['Permeability'] * 1e5
 # concatenated_df_rectangle['Energy'] = concatenated_df_rectangle['Energy'] * 1e5
 
@@ -107,10 +109,6 @@ sigma_permeability_triangle = np.sqrt(variance_permeability_triangle) * mean_per
 sigma_surface_triangle = np.sqrt(variance_surface_triangle) * mean_surface_triangle
 
 
-# concated_df = pd.concat([concatenated_df_rectangle, concatenated_df_triangle], ignore_index=True)
-# concated_df = pd.concat([concatenated_df_ellipse], ignore_index=True)
-#print(concated_df)
-
 def plot_box_and_whisker(ax, x, y, z, sigma_x, sigma_y, sigma_z, color):
         #debugging
         # print(f"Length of x: {len(x)}")
@@ -133,16 +131,11 @@ for i in range(len(concatenated_df_rectangle)):
     average_samples.append(avg_sample)
 average_samples = pd.DataFrame(average_samples)
 
-# print(average_samples)
-# print(concatenated_df_rectangle)
-# print(concatenated_df_triangle)
-# print(concatenated_df_ellipse)
 
 concatenated_df_rectangle['Euler_total'] = 'Rectangle'
 concatenated_df_triangle['Euler_total'] = 'Triangle'
 
 concated_df = pd.concat([concatenated_df_rectangle, concatenated_df_triangle], ignore_index=True)
-print(concated_df)
 
 
 ############### PLOTS OF DATA POINTS THEMSELVES ################
@@ -151,16 +144,9 @@ ax = fig.add_subplot(111, projection='3d')
 all_colors = pd.concat([concatenated_df_rectangle['Permeability'], concatenated_df_triangle['Permeability']])
 min_color = all_colors.min()
 max_color = all_colors.max()
-#ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol'], c=concatenated_df_rectangle['Permeability'], cmap='winter', marker='s')
-#ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol'], c=concatenated_df_triangle['Permeability'], cmap='winter', marker='^')
-#ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol'], c=concatenated_df_ellipse['Permeability'], cmap='winter', marker='o')
 sc1 = ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol'], c=concatenated_df_triangle['Permeability'], cmap='winter', marker='^', vmin=min_color, vmax=max_color)
-
 sc2 = ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol'], c=concatenated_df_rectangle['Permeability'], cmap='winter', marker='s', vmin=min_color, vmax=max_color)
-
-#fig.colorbar(sc1, ax=ax, label='Permeability')
 cbar = plt.colorbar(sc1, ax=ax, label='Permeability')
-
 ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
 ax.set_zlabel('Euler Mean Volume')
@@ -176,32 +162,21 @@ x_grid, y_grid = np.meshgrid(x, y)
 
 X = concated_df[['Porosity', 'Surface']]
 y = concated_df['Euler_mean_vol']
-linear_model = LinearRegression()
+`linear_model` = LinearRegression()
 linear_model.fit(X, y)
-# print(linear_model.coef_)
-
-
+print("M2 = ", linear_model.intercept_, " + ", linear_model.coef_[0], " M0 + ", linear_model.coef_[1], " M1")
 z_grid = linear_model.predict(np.c_[x_grid.ravel(), y_grid.ravel()]).reshape(x_grid.shape)
 
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.plot_surface(x_grid, y_grid, z_grid, cmap='Reds', alpha=0.7)
-
-
 all_colors = pd.concat([concatenated_df_rectangle['Permeability'], concatenated_df_triangle['Permeability']])
 min_color = all_colors.min()
 max_color = all_colors.max()
-#ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol'], c=concatenated_df_rectangle['Permeability'], cmap='winter', marker='s')
-#ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol'], c=concatenated_df_triangle['Permeability'], cmap='winter', marker='^')
-#ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol'], c=concatenated_df_ellipse['Permeability'], cmap='winter', marker='o')
 sc1 = ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol'], c=concatenated_df_triangle['Permeability'], cmap='winter', marker='^', vmin=min_color, vmax=max_color)
-
 sc2 = ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol'], c=concatenated_df_rectangle['Permeability'], cmap='winter', marker='s', vmin=min_color, vmax=max_color)
-
-#fig.colorbar(sc1, ax=ax, label='Permeability')
 cbar = plt.colorbar(sc1, ax=ax, label='Permeability')
-
 ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
 ax.set_zlabel('Euler Mean Volume')
@@ -237,7 +212,6 @@ concatenated_df_triangle = concatenated_df_triangle.sort_values(by='Euler_mean_v
 
 xdata_rectangle = [concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol']]
 xdata_triangle = [concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol']]
-# xdata_average = [average_samples['Porosity'], average_samples['Surface'], average_samples['Euler_mean_vol']]
 ydata_rectangle = concatenated_df_rectangle['Permeability']
 ydata_triangle = concatenated_df_triangle['Permeability']
 
@@ -247,11 +221,6 @@ ydata_triangle = concatenated_df_triangle['Permeability']
 # Interpolate between the samples of average_samples to have more data points
 t = np.linspace(0, len(average_samples) - 1, len(average_samples))
 t_interp = np.linspace(0, len(average_samples) - 1, 30)
-
-# Interpolating each feature
-# porosity_interp = make_interp_spline(t, xdata_rectangle[0], k=1)(t_interp)
-# surface_interp = make_interp_spline(t, xdata_rectangle[1], k=1)(t_interp)
-# euler_mean_vol_interp = make_interp_spline(t, xdata_rectangle[2], k=1)(t_interp)
 
 # Function to interpolate features and combine into a DataFrame
 def interpolate_features(xdata, t, t_interp):
@@ -273,20 +242,8 @@ ydata_triangle_interpolated = make_interp_spline(t, ydata_triangle, k=1)(t_inter
 # Calculate the average of interpolated samples
 average_xdata_interp = (xdata_rectangle_interpolated + xdata_triangle_interpolated) / 2
 average_ydata_interp = (ydata_rectangle_interpolated + ydata_triangle_interpolated) / 2
-#print(average_xdata_interp)
 
-    ################ PLOTTING INTERPOLATED SAMPLES ################
-    # fig = plt.figure()
-# ax = fig.add_subplot(111, projection='3d')
-# ax.scatter(xdata_rectangle_interpolated['Porosity'], xdata_rectangle_interpolated['Surface'], xdata_rectangle_interpolated['Euler_mean_vol'], c='b', marker='s', label='Rectangle')
-# ax.scatter(xdata_triangle_interpolated['Porosity'], xdata_triangle_interpolated['Surface'], xdata_triangle_interpolated['Euler_mean_vol'], c='r', marker='^', label='Triangle')
-# ax.scatter(xdata_ellipse_interpolated['Porosity'], xdata_ellipse_interpolated['Surface'], xdata_ellipse_interpolated['Euler_mean_vol'], c='g', marker='o', label='Ellipse')
-# ax.scatter(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], c='y', marker='o', label='Average Samples')
-# ax.set_xlabel('Porosity')
-# ax.set_ylabel('Surface')
-# ax.set_zlabel('Euler Mean Volume')
-# ax.legend()
-# plt.show()
+
 
 
 
@@ -300,12 +257,14 @@ popt_new, _ = opt.curve_fit(kozeny_carman_new, [average_xdata[0], average_xdata[
 k_old = kozeny_carman_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt_old)
 k_new = kozeny_carman_new_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt_new)
 k_new_evolution = kozeny_carman_new_plot(average_xdata[0], average_xdata[1], average_xdata[2], popt_new)
-print(popt_new)
+print("Best-fit k_m = ", popt_new[0])
+
 
 k_star = kozeny_carman_new_plot(average_xdata[0], average_xdata[1], average_xdata[2], 2.5)
+print("Theoretical k_m = 2.5")
 
 km_list = find_km(average_xdata[0], average_xdata[1], average_xdata[2], average_ydata)
-print(km_list)
+print("List of k_m values: ", km_list)
     
 
 
@@ -328,33 +287,6 @@ ax.legend()
 ax.view_init(elev=20, azim=205)
 plt.savefig(os.path.join(path, 'kozeny_line.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
-
-
-
-
-
-################# KOZENY-CARMAN SURFACE PLOT ################
-
-# Y, Z = np.meshgrid(np.linspace(np.max(average_xdata_interp['Porosity']), np.min(average_xdata_interp['Porosity']), 100), np.linspace(np.min(average_ydata_interp), np.max([ydata_rectangle, ydata_triangle, ydata_ellipse]), 100))
-# X = np.linspace(np.min(average_xdata_interp['Surface']), np.max(average_xdata_interp['Surface']), 100)
-# print(ydata_triangle)
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection='3d')
-# ax.plot_surface(Y, X, Z, cmap='Blues', alpha=0.7)
-# all_colors = pd.concat([xdata_rectangle[2], xdata_triangle[2], xdata_ellipse[2]])
-# min_color = all_colors.min()
-# max_color = all_colors.max()
-# # ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], klist, label='Kozeny-Carman Fit', color='y')
-# sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdata_rectangle[2], marker='s', cmap='winter', vmin=min_color, vmax=max_color)
-# sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
-# sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
-# cbar = plt.colorbar(sc1, ax=ax, label='Euler')
-# ax.set_xlabel('Porosity')
-# ax.set_ylabel('Surface')
-# ax.set_zlabel('Permeability')
-# ax.view_init(elev=20, azim=205)
-# plt.savefig(os.path.join(path, 'kozeny_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
-# plt.show()
 
 
 
@@ -387,6 +319,9 @@ a_exp, b_exp, c_exp = popt_exp
 a_poly, b_poly, c_poly, d_poly, e_poly, f_poly = popt_poly
 a_power, b_power, c_power = popt_power
 
+print("Exponential surface: k = ", a_exp, " * exp(", b_exp, "*M0+", c_exp, "*M1)")
+print("Power-law surface: k = ", a_power, " * M0^", b_power, " * M1^", c_power)
+
 # Calculate RMSE between the surface generated and the points plotted
 def calculate_rmse(actual, predicted):
     return np.sqrt(mean_squared_error(actual, predicted))
@@ -411,11 +346,9 @@ ax = fig.add_subplot(111, projection='3d')
 all_colors = pd.concat([xdata_rectangle[2], xdata_triangle[2]])
 min_color = all_colors.min()
 max_color = all_colors.max()
-# sc = ax.scatter(X, Y, Z, c=concated_df['Euler_mean_vol'], cmap='viridis', label='Data Points')
 sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdata_rectangle[2], marker='s', cmap='winter', vmin=min_color, vmax=max_color)
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Euler')
-# ax.plot_surface(x_mesh, y_mesh, z_mesh_poly, color='red', alpha=0.5, edgecolor='w', label='Fitted Polynomial Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_power, color='green', alpha=0.5, edgecolor='w', label='Fitted Power Law Surface')
 if VARIANCE:

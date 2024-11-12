@@ -1,12 +1,14 @@
 ############ SHORT GUIDE ON HOW TO USE THIS SCRIPT ############
 # Chose from the folders given in lines 29-31
-# Change the path in line 35 to desired dataset folder
+# Change the path in line 40 to desired dataset folder
 # Run the script
 # The script will output the following 3D plots:
 # 1. A plot in M0, M1, M2 (colored permeability) of the data points themselves
-# 2. A plot in M0, M1, M2 (colored permeability) of the data points themselves with a best-fit plane
-# 3. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman curve
-# 4. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman best-fit exponential surface
+# 2. A plot in M0, M1, M2 (colored permeability) of the data points themselves with a best-fit flat plane (a+b*M0+c*M1)
+# 3. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman curve (old and new)
+# 4. A plot in M0, M1, permeability (colored M2) of the data points with a Kozeny-Carman best-fit exponential (a*exp(b*M+c*M1)) and power-law (a*M0^b*M1^c) surfaces
+# 5. A plot showing the evolution of k_m with porosity
+# 6. A plot showing the fitted, theoretical and actual k_m values with porosity
 
 import seaborn as sns
 import numpy as np
@@ -23,7 +25,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import scipy.optimize as opt
 plt.rcParams["figure.figsize"] = (16, 9)
-VARIANCE=False
+VARIANCE=True
 
 #Set desired SD
 SD=1
@@ -176,7 +178,7 @@ X = concated_df[['Porosity', 'Surface']]
 y = concated_df['Euler_mean_vol']
 linear_model = LinearRegression()
 linear_model.fit(X, y)
-# print(linear_model.coef_)
+print("M2 = ", linear_model.intercept_, " + ", linear_model.coef_[0], " M0 + ", linear_model.coef_[1], " M1")
 z_grid = linear_model.predict(np.c_[x_grid.ravel(), y_grid.ravel()]).reshape(x_grid.shape)
 
 
@@ -272,12 +274,14 @@ popt_new, _ = opt.curve_fit(kozeny_carman_new, [average_xdata[0], average_xdata[
 k_old = kozeny_carman_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt_old)
 k_new = kozeny_carman_new_plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], average_xdata_interp['Euler_mean_vol'], popt_new)
 k_new_evolution = kozeny_carman_new_plot(average_xdata[0], average_xdata[1], average_xdata[2], popt_new)
-print(popt_new)
+print("Best-fit k_m = ", popt_new[0])
+
 
 k_star = kozeny_carman_new_plot(average_xdata[0], average_xdata[1], average_xdata[2], 2.5)
+print("Theoretical k_m = 2.5")
 
 km_list = find_km(average_xdata[0], average_xdata[1], average_xdata[2], average_ydata)
-print(km_list)
+print("List of k_m values: ", km_list)
     
 
 
@@ -332,6 +336,9 @@ popt_power, _ = opt.curve_fit(power_law, XY, Z, p0=(1, 2, 2))  # Initial guesses
 a_exp, b_exp, c_exp = popt_exp
 a_poly, b_poly, c_poly, d_poly, e_poly, f_poly = popt_poly
 a_power, b_power, c_power = popt_power
+
+print("Exponential surface: k = ", a_exp, " * exp(", b_exp, "*M0+", c_exp, "*M1)")
+print("Power-law surface: k = ", a_power, " * M0^", b_power, " * M1^", c_power)
 
 # Calculate RMSE between the surface generated and the points plotted
 def calculate_rmse(actual, predicted):
