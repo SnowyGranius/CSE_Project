@@ -20,7 +20,7 @@ import scipy.optimize as opt
 VARIANCE=1
 
 #set this to 3 or 1 depending on the SD you want to plot
-SD=3
+SD=2
 
 
 # # Read the data from the csv file
@@ -188,7 +188,7 @@ for sub_path in path_list:
 
     ax.set_title('Box and Whisker Plots for ' + sub_path.replace('_', ' '))
     #set log scale permeability and set limits
-    ax.set_zscale('log')
+    #ax.set_zscale('log')
 
     # Set axis limits based on the min and max values
     ax.set_xlim([min_porosity, max_porosity])
