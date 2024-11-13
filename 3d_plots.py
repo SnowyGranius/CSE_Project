@@ -37,7 +37,7 @@ SD=1
 
 ################ READING ALL THE FILES IN THE FOLDER ################
 script_dir = os.path.dirname(__file__)
-sub_path = 'Threshold_homogenous_diamater_wide_RCP'
+sub_path = 'Threshold_homogenous_diamater_small_RCP'
 path = os.path.join(script_dir, sub_path)
 variance_path=os.path.join(script_dir, 'Summaries', sub_path)
 # all_files = glob.glob(os.path.join(path, "*0.300*.csv"))
@@ -401,6 +401,7 @@ ax = fig.add_subplot()
 ax.scatter(average_xdata[0], km_list, label='Kozeny-Carman')
 ax.set_xlabel('Porosity')
 ax.set_ylabel('k_m')
+ax.grid()
 plt.legend()
 plt.savefig(os.path.join(path, 'km_evolution.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
@@ -412,6 +413,7 @@ ax.semilogy(average_xdata[0], k_new_evolution, label='fitted')
 ax.semilogy(average_xdata[0], k_star, label='theoretical')
 ax.set_xlabel('Porosity')
 ax.set_ylabel('k')
+ax.grid()   
 plt.legend()
 plt.savefig(os.path.join(path, 'fitted_theoretical.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
