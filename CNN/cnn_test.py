@@ -17,14 +17,16 @@ from torchsummary import summary
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-folder_path = r"C:\Users\ionst\Documents\Fisiere_Python\Proiect\CNN\Images\\"
+script_path = os.path.dirname(__file__)
+sub_path = 'Datasets/'
+path = os.path.join(script_path, sub_path)
 
 # Check if CUDA is available, otherwise use CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 #device = torch.device('cpu')
 print(f'Using device: {device}')
 
-df = pd.read_csv(folder_path + 'labels.csv')
+df = pd.read_csv(path + 'labels.csv')
 
 #df = pd.read_csv('labels.csv')
 
