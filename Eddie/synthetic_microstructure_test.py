@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from skimage.measure import perimeter, perimeter_crofton
 from skimage.measure import euler_number
-import csv
 import os
+import pandas as pd
 
 for i in range (1, 51):
     for j in range(1, 11):
@@ -32,29 +32,36 @@ for i in range (1, 51):
         print('Crofton Perimeter, 4 connectivity = {}'.format(per_c4))
 
         im_inv = np.invert(im)
-        M2 = euler_number(im, connectivity = 1)
+        M2 = euler_number(im_inv, connectivity = 1)
 
         print('M2 = {}'.format(M2))\
         
         script_dir = os.path.dirname(__file__)
         base_path=script_dir
-        path='Microstructure generation'
+        sub_path='Microstructure_generation'
 
-        path=os.path.join(base_path, path)
+        path=os.path.join(base_path, sub_path)
     
         # Check if the file exists3
-        file_exists = os.path.isfile(path)
+        new_data = pd.DataFrame([[i, j, M0, per4, M2]], columns=['Seed', 'Blobiness', 'M0', 'M1', 'M2'])
 
-        # Open the CSV file in append mode
-        with open(path, newline='') as file:
-            writer = csv.writer(file)
-            # Write the header only if the file does not exist
-            if not file_exists:
-                writer.writerow(['Seed', 'Blobiness', 'M0', 'M1', 'M2'])
-                # Write the data
-                writer.writerow([i, j, M0, M1, M2])
+        csv_file = os.path.join(path, 'microstructure_data.csv')
+        file_exists = os.path.isfile(csv_file)
+
+        if file_exists:
+            # If the file exists, read it into a DataFrame
+            df = pd.read_csv(csv_file)
+            # Append the new data to the DataFrame
+            df = pd.concat([df, new_data], ignore_index=True)
+        else:
+            # If the file does not exist, use the new data as the DataFrame
+            df = new_data
+
+        # Write the DataFrame back to the CSV file
+        df.to_csv(csv_file, index=False)
+
         # Show microstructure
-        plt.imshow(im)
-        plt.colorbar()
-        plt.savefig(os.path.join(path, f'microstructure_seed_{i}_blobiness_{j}.png'))
-        plt.close()
+        # plt.imshow(im)
+        # plt.colorbar()
+        # plt.savefig(os.path.join(path, f'microstructure_seed_{i}_blobiness_{j}.png'))
+        # plt.close()
