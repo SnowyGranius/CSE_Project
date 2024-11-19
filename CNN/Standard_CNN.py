@@ -4,13 +4,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch import nn
 from sklearn.metrics import accuracy_score
+import os
+import sys
 
 # NLLLoss function expects float64 dtype
 torch.set_default_dtype(torch.float64)
 # Assuming default device as 'cpu'. If GPU is desired, use 'cuda'
 my_device = torch.device('cuda')
 
-with np.load('D:/Facultate/Proiecte/CSE/Data_Analysis/MNIST_Dataset/mnist.npz') as data: # CHANGE TO OWN PATH TO DATA
+current_directory = os.path.dirname(os.path.abspath(sys.argv[0])) 
+print(current_directory)
+
+with np.load(f'{current_directory}/Datasets/mnist.npz') as data: # CHANGE TO OWN PATH TO DATA
     x_train = data['x_train']
     y_train = data['y_train'] 
     x_test= data['x_test'] 
