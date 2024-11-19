@@ -15,7 +15,7 @@ my_device = torch.device('cuda')
 current_directory = os.path.dirname(os.path.abspath(sys.argv[0])) 
 print(current_directory)
 
-with np.load(f'{current_directory}/Datasets/mnist.npz') as data: # CHANGE TO OWN PATH TO DATA
+with np.load(f'{current_directory}/Datasets/mnist.npz') as data:
     x_train = data['x_train']
     y_train = data['y_train'] 
     x_test= data['x_test'] 
