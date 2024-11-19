@@ -10,12 +10,12 @@ import glob
 from sklearn.preprocessing import StandardScaler
 
 
-path = 'Datasets/Porespy_homogenous_diamater'
+path = 'Porespy_homogenous_diamater'
 all_files = glob.glob(os.path.join(path, '*.csv'))
 df_from_each_file = (pd.read_csv(f, dtype=np.float64) for f in all_files)
 concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
 
-X, y = concatenated_df[['Porosity', 'Euler_mean_vol']].values, concatenated_df['Permeability'].values.reshape(-1, 1)
+X, y = concatenated_df[['Porosity', 'Euler_mean_vol', 'Surface']].values, concatenated_df['Permeability'].values.reshape(-1, 1)
 
 # Scale the features and targets
 scaler_X = StandardScaler()
@@ -48,7 +48,7 @@ class MLP(nn.Module):
         self.layers = nn.Sequential(
             # An input of 8 nodes to a layer of 64 nodes, 8 nodes is chosen for the 8 features of
             # the dataset
-            nn.Linear(2, 64),
+            nn.Linear(3, 64),
             # ReLU activation function given for this layer
             nn.ReLU(),
             # Next layer takes in the 64 nodes, compresses to 32 nodes
