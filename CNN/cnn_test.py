@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 script_path = os.path.dirname(__file__)
-sub_path = 'Datasets/'
+sub_path = 'Datasets/Images-cnn-test/'
 path = os.path.join(script_path, sub_path)
 
 # Check if CUDA is available, otherwise use CPU
@@ -30,13 +30,13 @@ df = pd.read_csv(path + 'labels.csv')
 
 #df = pd.read_csv('labels.csv')
 
-image_paths = folder_path+df['image'].values
+image_paths = path+df['image'].values
 #print(image_paths)
 labels = df['label'].values
 num_classes = 21
 
 label_mapping = {}
-with open(folder_path+'label_mapping.txt', 'r') as file:
+with open(path+'label_mapping.txt', 'r') as file:
     for line in file:
         value, key = line.strip().split(': ')
         label_mapping[int(key)] = value
@@ -48,7 +48,7 @@ train_paths, test_paths, train_labels, test_labels = train_test_split(
 val_paths, test_paths, val_labels, test_labels = train_test_split(
     test_paths, test_labels, test_size=0.5, random_state=42)
 
-def load_images(file_paths, transform, folder_path = folder_path):
+def load_images(file_paths, transform, folder_path = path):
     images = []
     for file_path in tqdm(file_paths, desc='Loading images'):
         # Load the image
@@ -304,8 +304,6 @@ def test(model, test_loader):
 # test(model, test_loader)
 # visualize(metrics)
 
-############## OH YOU DIGGIN IN ME ##############
-
 class DeeperCNN(nn.Module):
     def __init__(self, num_classes):
         super(DeeperCNN, self).__init__()
@@ -410,5 +408,5 @@ class EvenDeeperCNN(nn.Module):
 even_deeper_CNN = EvenDeeperCNN(num_classes=num_classes).to(device)
 summary(even_deeper_CNN, input_size=(3, 224, 224))
 metrics3 = train(even_deeper_CNN, train_loader, lr=0.00005, num_epochs=20)
-even_deeper_CNN.load_state_dict(torch.load('/best_model.pth'))
-print("Loaded best model from:", '/best_model.pth')
+even_deeper_CNN.load_state_dict(torch.load('best_model.pth'))
+print("Loaded best model from:", 'best_model.pth')
