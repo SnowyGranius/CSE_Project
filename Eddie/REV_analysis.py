@@ -7,10 +7,11 @@ import os
 import pandas as pd
 
 DATA_GEN=False
+DATA_ANALYSIS=True
 DATA_PLOTTING=True
 
 
-
+b=7
 #------------------IMAGE & DATA GENERATION---------------#
 if DATA_GEN:
     for resolution in range(500, 1100, 100):
@@ -19,7 +20,7 @@ if DATA_GEN:
         fig1, ax1 = plt.subplots(1, 1, figsize=[6, 6])
         #fig2, ax2 = plt.subplots(1, 1, figsize=[6, 6])
 
-        im = ps.generators.blobs(shape=[resolution, resolution], porosity=0.55, blobiness=2, seed=10)
+        im = ps.generators.blobs(shape=[resolution, resolution], porosity=0.55, blobiness=b, seed=10)
         # Create a mesh grid for subsampling
         x = np.linspace(0, resolution, grid_size)
         y = np.linspace(0, resolution, grid_size)
@@ -56,9 +57,9 @@ if DATA_GEN:
 
                         path=os.path.join(base_path, sub_path)
                         # Check if the file exists
-                        new_data = pd.DataFrame([[resolution, k**2, 2, M0, per4, M2]], columns=['Resolution','Subsamples', 'Blobiness', 'M0', 'M1', 'M2'])
+                        new_data = pd.DataFrame([[resolution, k**2, b, M0, per4, M2]], columns=['Resolution','Subsamples', 'Blobiness', 'M0', 'M1', 'M2'])
 
-                        csv_file = os.path.join(path, 'individual_MF.csv')
+                        csv_file = os.path.join(path, f'individual_MF_blobiness_{b}.csv')
                         file_exists = os.path.isfile(csv_file)
 
                         if file_exists:
@@ -90,10 +91,10 @@ if DATA_GEN:
 
 
 #------------------DATA PLOTTING-------------------------#
-if DATA_PLOTTING:
+if DATA_ANALYSIS:
     script_dir = os.path.dirname(__file__)
     base_path=script_dir
-    path=os.path.join(base_path, 'REV_files', 'individual_MF.csv')
+    path=os.path.join(base_path, 'REV_files', f'individual_MF_blobiness_{b}.csv')
     data = pd.read_csv(path)
 
     # Extract M0, M1, and M2 columns
@@ -102,29 +103,33 @@ if DATA_PLOTTING:
     M2 = data['M2']
     subsamples=data['Subsamples']
     ###--------------DATA FILTERING---------------###
-
-    # Create a 3D plot with all the points
-    resolutions = data['Resolution'].unique()
-    fig, axes = plt.subplots(1, len(resolutions), figsize=(15, 5), sharey=True)
-    for idx, resolution in enumerate(resolutions):
-        ax = axes[idx]
-        ax.set_title(f'Resolution {resolution}')
-        filtered_data = data[data['Resolution'] == resolution]
-        subsample_nr = filtered_data['Subsamples']
-        
-        M0_filtered = filtered_data['M0']
-        avg_M0 = filtered_data.groupby(1/subsample_nr)['M0'].mean()
-        print(subsample_nr, avg_M0)
-        M0_std = filtered_data.groupby(1/subsample_nr)['M0'].std()
-        print("Rel. Error", M0_std/(np.sqrt(subsample_nr.iloc[0])*avg_M0))
-        ax.scatter(avg_M0.index, avg_M0.values, color='red', label='Average M0')
-        
-        scatter = ax.scatter(1/subsample_nr, M0_filtered, label=f'Resolution {resolution}')
-        ax.set_xlabel('1/Subsamples')
-        ax.set_ylabel('M0')
-        
-    plt.tight_layout()
-    plt.show()
+    if DATA_PLOTTING:
+        # Create a 3D plot with all the points
+        resolutions = data['Resolution'].unique()
+        fig, axes = plt.subplots(1, len(resolutions), figsize=(15, 5), sharey=True)
+        for idx, resolution in enumerate(resolutions):
+            ax = axes[idx]
+            ax.set_title(f'Resolution {resolution}')
+            filtered_data = data[data['Resolution'] == resolution]
+            subsample_nr = filtered_data['Subsamples']
+            
+            M0_filtered = filtered_data['M0']
+            M1_filtered = filtered_data['M1']
+            M2_filtered = filtered_data['M2']
+            avg_M0 = filtered_data.groupby(1/subsample_nr)['M0'].mean()
+            avg_M1 = filtered_data.groupby(1/subsample_nr)['M1'].mean()
+            avg_M2 = filtered_data.groupby(1/subsample_nr)['M2'].mean()
+            #print(subsample_nr, avg_M0)
+            M0_std = filtered_data.groupby(1/subsample_nr)['M0'].std()
+            M1_std = filtered_data.groupby(1/subsample_nr)['M1'].std()
+            M2_std = filtered_data.groupby(1/subsample_nr)['M2'].std()
+            print("Rel. Error", M0_std/(np.sqrt(subsample_nr.iloc[0])*avg_M0), M1_std/(np.sqrt(subsample_nr.iloc[0])*avg_M1), M2_std/(np.sqrt(subsample_nr.iloc[0])*avg_M2))
+            ax.scatter(avg_M0.index, avg_M0.values, color='red', label='Average M0') 
+            scatter = ax.scatter(1/subsample_nr, M0_filtered, label=f'Resolution {resolution}')
+            ax.set_xlabel('1/Subsamples')
+            ax.set_ylabel('M0') 
+        plt.tight_layout()
+        plt.show()
     # ax.legend()
     # # Extract M0, M1, and M2 columns for the filtered data
     # M0_filtered = data['M0']
