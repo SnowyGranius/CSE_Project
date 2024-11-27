@@ -23,7 +23,7 @@ path = os.path.join(script_path, sub_path)
 
 # Check if CUDA is available, otherwise use CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-#device = torch.device('cpu')
+# device = torch.device('cpu')
 print(f'Using device: {device}')
 
 df = pd.read_csv(path + 'labels.csv')
@@ -406,7 +406,11 @@ class EvenDeeperCNN(nn.Module):
         return x
     
 even_deeper_CNN = EvenDeeperCNN(num_classes=num_classes).to(device)
-summary(even_deeper_CNN, input_size=(3, 224, 224))
-metrics3 = train(even_deeper_CNN, train_loader, lr=0.00005, num_epochs=20)
+try:
+    summary(even_deeper_CNN.to('cuda'), input_size=(3, 224, 224))
+except:
+    summary(even_deeper_CNN.to('cpu'), input_size=(3, 224, 224))
+# summary(even_deeper_CNN, input_size=(3, 224, 224))
+metrics3 = train(even_deeper_CNN.to(device), train_loader, lr=0.00005, num_epochs=20)
 even_deeper_CNN.load_state_dict(torch.load('best_model.pth'))
 print("Loaded best model from:", 'best_model.pth')

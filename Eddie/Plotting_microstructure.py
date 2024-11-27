@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # csv_file_path = 'Microstructure_generation\microstructure_data.csv'
 script_dir = os.path.dirname(__file__)
 base_path=script_dir
-path=os.path.join(base_path, 'Microstructure_generation', 'microstructure_data.csv')
+path=os.path.join(base_path, 'Microstructure_generation', 'Initial_data', 'microstructure_data.csv')
 data = pd.read_csv(path)
 
 # Extract M0, M1, and M2 columns
