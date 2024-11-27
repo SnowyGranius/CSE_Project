@@ -7,7 +7,7 @@ import os
 current_directory = os.path.dirname(os.path.abspath(sys.argv[0])) 
 print(current_directory)
 
-# Define numpy arrays to store circle data
+# Arrays to store circle data
 x_coord = np.array([])
 y_coord = np.array([])
 radii = np.array([])
@@ -27,8 +27,6 @@ def read_circle_data(file_path):
             radii = np.append(radii, [radius])
 
 def generate_image(image_name, image_shape=(1000, 1000)):
-    nrcircles = len(x_coord)
-    print(nrcircles)
     # Create a blank binary image
     image = np.zeros(image_shape, dtype=np.uint8)
 
@@ -41,18 +39,18 @@ def generate_image(image_name, image_shape=(1000, 1000)):
     y_scaler = (image_shape[0] - 1) / (y_max - y_min)
     print(x_scaler, y_scaler)
 
-    # Scale coordinates and radii
+    
     x_coord_scaled = (x_coord - x_min) * x_scaler
     y_coord_scaled = (y_coord - y_min) * y_scaler
     radii_scaled = radii * x_scaler # Or y scaler?
 
-    # Use skimage draw disk to draw filled circles
+    
     nr_circles = len(x_coord)
     for i in range(nr_circles):
         rr, cc = disk((x_coord_scaled[i], y_coord_scaled[i]), radii_scaled[i], shape=image_shape)
         image[rr, cc] = 1 # Foreground
 
-    # Save the image to a folder
+    
     plt.imsave(f'{current_directory}/Circle_Images/{image_name}', image, cmap='gray')
 
 Models = [1]
