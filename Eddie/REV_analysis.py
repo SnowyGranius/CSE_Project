@@ -6,12 +6,14 @@ from skimage.measure import euler_number
 import os
 import pandas as pd
 
-DATA_GEN=False
+DATA_GEN=True
 DATA_ANALYSIS=True
 DATA_PLOTTING=True
 
 
-b=7
+b=9
+p=0.75
+
 #------------------IMAGE & DATA GENERATION---------------#
 if DATA_GEN:
     for resolution in range(500, 1100, 100):
@@ -20,7 +22,7 @@ if DATA_GEN:
         fig1, ax1 = plt.subplots(1, 1, figsize=[6, 6])
         #fig2, ax2 = plt.subplots(1, 1, figsize=[6, 6])
 
-        im = ps.generators.blobs(shape=[resolution, resolution], porosity=0.55, blobiness=b, seed=10)
+        im = ps.generators.blobs(shape=[resolution, resolution], porosity=p, blobiness=b, seed=10)
         # Create a mesh grid for subsampling
         x = np.linspace(0, resolution, grid_size)
         y = np.linspace(0, resolution, grid_size)
@@ -57,9 +59,9 @@ if DATA_GEN:
 
                         path=os.path.join(base_path, sub_path)
                         # Check if the file exists
-                        new_data = pd.DataFrame([[resolution, k**2, b, M0, per4, M2]], columns=['Resolution','Subsamples', 'Blobiness', 'M0', 'M1', 'M2'])
+                        new_data = pd.DataFrame([[resolution, k**2, p, b, M0, per4, M2]], columns=['Resolution','Subsamples', 'Porosity', 'Blobiness', 'M0', 'M1', 'M2'])
 
-                        csv_file = os.path.join(path, f'individual_MF_blobiness_{b}.csv')
+                        csv_file = os.path.join(path, f'porosity_{p}_individual_MF_blobiness_{b}.csv')
                         file_exists = os.path.isfile(csv_file)
 
                         if file_exists:
@@ -94,7 +96,7 @@ if DATA_GEN:
 if DATA_ANALYSIS:
     script_dir = os.path.dirname(__file__)
     base_path=script_dir
-    path=os.path.join(base_path, 'REV_files', f'individual_MF_blobiness_{b}.csv')
+    path=os.path.join(base_path, 'REV_files', f'porosity_{p}_individual_MF_blobiness_{b}.csv')
     data = pd.read_csv(path)
 
     # Extract M0, M1, and M2 columns
