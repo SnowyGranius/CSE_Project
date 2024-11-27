@@ -36,7 +36,7 @@ for i in range(100, 1000, 100):
         M2 = euler_number(im_inv, connectivity = 1)
 
         #print('M2 = {}'.format(M2))\
-        
+        '''
         script_dir = os.path.dirname(__file__)
         base_path=script_dir
         sub_path='Microstructure_generation'
@@ -61,22 +61,23 @@ for i in range(100, 1000, 100):
 
         # Write the DataFrame back to the CSV file
         df.to_csv(csv_file, index=False)
-
+        '''
         # Show microstructure
         # plt.imshow(im)
         # plt.colorbar()
         fig, ax = plt.subplots(1, 2, figsize=(12, 6))
         
         # Black and white image
-        ax[0].imshow(im, cmap='gray')
+        ax[0].imshow(im, cmap='gray', interpolation='none')
         ax[0].set_title('Black and White Microstructure')
         ax[0].axis('off')
         
         # Color image
-        ax[1].imshow(im)
+        ax[1].imshow(im, interpolation='none')
         ax[1].set_title('Color Microstructure')
         ax[1].axis('off')
         
         #plt.colorbar(ax[1].images[0], ax=ax[1])
-        plt.savefig(os.path.join(path, f'resolution_{i}_seed_10_blobiness_2.png'))
+        plt.show()
+        #plt.savefig(os.path.join(path, f'resolution_{i}_seed_10_blobiness_2.png'))
         plt.close()
