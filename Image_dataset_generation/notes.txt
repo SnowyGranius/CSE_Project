@@ -1,0 +1,37 @@
+import meshio
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.draw import polygon
+
+
+def mesh_to_png(mesh_path, path, shape, sample, packing_fraction, image_shape=(1000, 1000)):
+    # Load mesh with meshio
+    mesh = meshio.read(mesh_path)
+    
+    # Get node coordinates and elements (triangles or quadrilaterals)
+    points = mesh.points[:, :2]  # Only X, Y for 2D mesh
+    cells = mesh.cells_dict['triangle'] if 'triangle' in mesh.cells_dict else mesh.cells_dict['quad']
+    
+    # Create an empty binary image
+    binary_image = np.zeros(image_shape, dtype=np.uint8)
+    
+    # Scale points to fit within the image dimensions
+    min_x, min_y = points.min(axis=0)
+    max_x, max_y = points.max(axis=0)
+    scale_x = (image_shape[1] - 1) / (max_x - min_x)
+    scale_y = (image_shape[0] - 1) / (max_y - min_y)
+    
+    for cell in cells:
+        # Get the polygon vertices
+        polygon_points = points[cell]
+        
+        # Scale and shift vertices to image grid
+        polygon_points[:, 0] = (polygon_points[:, 0] - min_x) * scale_x
+        polygon_points[:, 1] = (polygon_points[:, 1] - min_y) * scale_y
+        
+        # Use skimage.draw.polygon to fill the triangles/quads
+        rr, cc = polygon(polygon_points[:, 1], polygon_points[:, 0], shape=image_shape)
+        binary_image[rr, cc] = 1  # Mark as foreground
+    
+    # Save the binary image as a PNG
+    plt.imsave("%s/Microstructures_porespy/%s_packing_%i_pf_%1.3f.png" %(path, shape, sample, packing_fraction), binary_image, cmap="gray")
