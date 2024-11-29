@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
 import os
@@ -11,9 +11,16 @@ from sklearn.preprocessing import StandardScaler
 import seaborn as sns
 import matplotlib.pyplot as plt
 import time
-from matplotlib.ticker import FormatStrFormatter
-from sklearn.model_selection import KFold
+from matplotlib.ticker import FormatStrFormatter, ScalarFormatter
 from sklearn.linear_model import LinearRegression
+from pygam import LinearGAM, s
+from sklearn.tree import DecisionTreeRegressor
+from pysindy import SINDy
+from pysindy.feature_library import PolynomialLibrary
+from gplearn.genetic import SymbolicRegressor
+from sympy import *
+from gplearn.functions import make_function
+
 
 #arhitecture of MLP
 class MLP(nn.Module):
@@ -23,7 +30,7 @@ class MLP(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(2, 32),
+            nn.Linear(3, 32),
             nn.LeakyReLU(),
             # nn.Linear(32, 16),
             # nn.LeakyReLU(),
@@ -56,11 +63,14 @@ def parity_plot(targets_original, targets_predicted, color):
     r2 = r2_score(targets_original, targets_predicted)
     mse = mean_squared_error(targets_original, targets_predicted)
 
-    plt.scatter(targets_original_scale, targets_predicted_scale, alpha=0.6, color=color, label=f'R²: {r2:.5f}\nMSE: {mse:.5f}')
+    plt.gca().yaxis.set_major_formatter(ScalarFormatter())
+    plt.gca().xaxis.set_major_formatter(ScalarFormatter())
+
+    plt.scatter(targets_original_scale, targets_predicted_scale, alpha=0.6, color=color, label=f'R²: {r2:.5f}\nMSE (scaled data): {mse:.5f}')
     plt.plot([min(targets_original_scale), max(targets_original_scale)],
              [min(targets_original_scale), max(targets_original_scale)], color='r', linestyle='--', label='Parity Line')
-             
-    plt.title('Parity Plot '+ os.path.basename(path)+ ' Predictions Based on $M_0$ and $M_1$')
+
+    plt.title('Parity Plot '+ os.path.basename(path)+ ' Predictions Based on $M_0$, $M_1$ and $M_2$ ')
     plt.xlabel('True Permeability')
     plt.ylabel('Predicted Permeability')
     plt.legend()
@@ -68,6 +78,8 @@ def parity_plot(targets_original, targets_predicted, color):
     plt.axis('equal')
 
 def cross_validate_mlp(X_train_init, y_train_init, X_test_init, y_test_init, model, k, shuffle, n_epochs, batch_size, learning_rate):
+    start_time = time.time()
+
     kf = KFold(n_splits=k, shuffle=shuffle)
     mse_scores, r2_scores = [], []
     mse_scores_train, r2_scores_train = [], []
@@ -158,6 +170,10 @@ def cross_validate_mlp(X_train_init, y_train_init, X_test_init, y_test_init, mod
     # predicted_labels_original = scaler_y.inverse_transform(y_predict.reshape(-1, 1)).flatten()
     # test_targets_original = scaler_y.inverse_transform(y_actuals.reshape(-1, 1)).flatten()
 
+    end_time = time.time()
+
+    print(f"time duration = {end_time - start_time}")
+
     mse = mean_squared_error(y_actuals, y_predict)
     r2 = r2_score(y_actuals, y_predict)
 
@@ -233,6 +249,136 @@ def linear_regression_prediciton(X_train, y_train, X_test, y_test):
     parity_plot(y_test, y_pred, 'b')
     plt.show()
 
+def GAM_model(X_train, y_train, X_test, y_test): 
+    gam = LinearGAM(s(0, lam=0.6) + s(1, lam=0.6) + s(2, lam=0.6))  # s(i) defines a smooth term for feature i
+    gam.fit(X_train, y_train) #gridsearch not that good
+
+    y_pred = gam.predict(X_test)
+
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+
+    print(f"Mean Squared Error Test (MSE): {mse:.15f}")
+    print(f"R² Score Test: {r2:.6f}")
+
+    y_pred_train = gam.predict(X_train)
+
+    mse_train = mean_squared_error(y_train, y_pred_train)
+    r2_train = r2_score(y_train, y_pred_train)
+
+    print(f"Mean Squared Error Train (MSE): {mse_train:.15f}")
+    print(f"R² Score Train: {r2_train:.6f}")
+
+    for i, term in enumerate(gam.terms):
+        df = concatenated_df[['Porosity', 'Surface', 'Euler_mean_vol', 'Permeability']]
+        if term.isintercept:
+            continue
+        XX = gam.generate_X_grid(term=i)
+        plt.figure()
+        plt.plot(XX[:, i], gam.partial_dependence(term=i, X=XX))
+        plt.plot(XX[:, i], gam.partial_dependence(term=i, X=XX, width=0.95)[1], c='r', ls='--')
+        plt.title(f'Feature {df.columns[i]}')
+        plt.xlabel(df.columns[i])
+        plt.ylabel('Partial Dependence')
+        plt.show()
+
+    # plt.scatter(y_test, y_pred, alpha=0.6, color='b', label=f'R²: {r2:.5f}\nMSE: {mse:.5f}')
+    # plt.plot([min(y_test), max(y_test)],
+    #          [min(y_test), max(y_test)], color='r', linestyle='--', label='Parity Line')
+
+    # plt.title('Parity Plot '+ os.path.basename(path)+ ' Predictions Based on $M_0$, $M_1$ and $M_2$')
+    # plt.xlabel('True Permeability')
+    # plt.ylabel('Predicted Permeability')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.axis('equal')
+    parity_plot(y_test, y_pred, 'b')
+
+    plt.show()
+
+def decision_tree(X_train, y_train, X_test, y_test):
+    model = DecisionTreeRegressor()
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+
+    # parity_plot(y_test, y_pred, 'b')
+    r2 = r2_score(y_pred, y_test)
+    mse = mean_squared_error(y_pred, y_test)
+
+    print(f"Mean Squared Error (MSE): {mse:.15f}")
+    print(f"R² Score: {r2:.6f}")
+
+    plt.scatter(y_test, y_pred, alpha=0.6, color='b', label=f'R²: {r2:.5f}\nMSE: {mse:.5f}')
+    plt.plot([min(y_test), max(y_test)],
+             [min(y_test), max(y_test)], color='r', linestyle='--', label='Parity Line')
+
+    plt.title('Parity Plot '+ os.path.basename(path)+ ' Predictions Based on $M_0$, $M_1$ and $M_2$')
+    plt.xlabel('True Permeability')
+    plt.ylabel('Predicted Permeability')
+    plt.legend()
+    plt.grid(True)
+    plt.axis('equal')
+
+    plt.show()
+
+def SR_sindy_prediciton(X_train, y_train, X_test, y_test):
+    feature_library = PolynomialLibrary(degree=3, include_interaction=True)
+
+    model = SINDy(feature_library=feature_library)
+
+    model.fit(X_train, t=y_train) 
+
+    model.print()
+
+def symbolic_regressor_model(X_train, y_train, X_test, y_test):
+
+    converter = {
+    'sub': lambda x, y : x - y,
+    'div': lambda x, y : x/y,
+    'mul': lambda x, y : x*y,
+    'add': lambda x, y : x + y,
+    'neg': lambda x    : -x,
+    'pow': lambda x, y : x**y,
+    'inv': lambda x: 1/x,
+    'sqrt': lambda x: x**0.5,
+    'pow3': lambda x: x**3
+    }
+
+    def pow_3(x1):
+        f = x1**3
+        return f
+
+    pow_3 = make_function(function=pow_3,name='pow3',arity=1)
+
+    function_set = ['add', 'sub', 'mul', 'div','cos','sin','neg','inv',pow_3]
+
+    start_time = time.time()
+    symbolic_regressor = SymbolicRegressor(population_size=500, function_set=function_set,
+                           generations=20, stopping_criteria=1e-8,
+                           p_crossover=0.7, p_subtree_mutation=0.1,
+                           p_hoist_mutation=0.05, p_point_mutation=0.1,
+                           max_samples=0.9,  metric='mse', verbose=1,
+                           parsimony_coefficient=0.001, random_state=1234)
+    
+    symbolic_regressor.fit(X_train, y_train)
+    y_pred = symbolic_regressor.predict(X_test)
+
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_pred, y_test)
+
+    end_time = time.time()
+
+    print(f"Time duration = {end_time - start_time}")
+
+    print("Best program:", symbolic_regressor._program)
+    print(f"Test MSE: {mse}")
+    print(f"R² Score: {r2:.6f}")
+
+    parity_plot(y_test, y_pred, 'b')
+    plt.show()
+
+
 pathlist = ['Datasets/Porespy_homogenous_diamater', 'Datasets/Heterogeneous_samples', 'Datasets/Threshold_homogenous_diamater_small_RCP', 'Datasets/Threshold_homogenous_diamater_wide_RCP']
 
 for path in pathlist:
@@ -240,7 +386,7 @@ for path in pathlist:
     df_from_each_file = (pd.read_csv(f, dtype=np.float64) for f in all_files)
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
 
-    X, y = concatenated_df[['Porosity', 'Surface']].values, concatenated_df['Permeability'].values.reshape(-1, 1)
+    X, y = concatenated_df[['Porosity', 'Surface', 'Euler_mean_vol']].values, concatenated_df['Permeability'].values.reshape(-1, 1)
    
     scaler_X = StandardScaler()
     scaler_y = StandardScaler()
@@ -248,11 +394,19 @@ for path in pathlist:
     X_scaled = scaler_X.fit_transform(X)
     y_scaled = scaler_y.fit_transform(y)
 
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=1234)
+    X_train_scaled, X_test_scaled, y_train_scaled, y_test_scaled = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=1234)
 
-    # cross_validate_mlp(X_train, y_train, X_test, y_test, mlp, 5, True, n_epochs, batch_size, learning_rate)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
+
+    #cross_validate_mlp(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, mlp, 5, True, n_epochs, batch_size, learning_rate)
     
-    linear_regression_prediciton(X_train, y_train, X_test, y_test)
+    GAM_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+
+    #decision_tree(X_train, y_train, X_test, y_test)
+
+    #SR_sindy_prediciton(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+
+    #symbolic_regressor_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
 
     # ellipse_exists = False
 
