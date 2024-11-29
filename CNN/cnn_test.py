@@ -143,8 +143,8 @@ class BasicCNN(nn.Module):
         return x
     
 # Instantiate the basic CNN
-# model = BasicCNN(num_classes=num_classes).to(device)
-# summary(model, input_size=(3, 224, 224))
+model = BasicCNN(num_classes=num_classes).to(device)
+summary(model, input_size=(3, 224, 224))
 
 criterion = nn.CrossEntropyLoss()
 def train(model, train_loader, path = 'best_model.pth', lr=0.005, num_epochs=5):
@@ -224,8 +224,8 @@ def train(model, train_loader, path = 'best_model.pth', lr=0.005, num_epochs=5):
 
   return metrics
 
-# metrics = train(model, train_loader, path='best_model.pth', num_epochs=10)
-# model.load_state_dict(torch.load('best_model.pth'))
+metrics = train(model, train_loader, path='best_model.pth', num_epochs=10)
+model.load_state_dict(torch.load('best_model.pth'))
 
 def visualize(metrics):
   cpu_metrics = {'training losses' : [],
@@ -301,8 +301,8 @@ def test(model, test_loader):
   # Update progress bar with stats
   print(f'Accuracy: {accuracy:.2f}%, Precision: {precision:.2f}%, Recall: {recall:.2f}%, F1 Score: {f1:.2f}%')
 
-# test(model, test_loader)
-# visualize(metrics)
+test(model, test_loader)
+visualize(metrics)
 
 class DeeperCNN(nn.Module):
     def __init__(self, num_classes):
@@ -405,12 +405,12 @@ class EvenDeeperCNN(nn.Module):
 
         return x
     
-even_deeper_CNN = EvenDeeperCNN(num_classes=num_classes).to(device)
-try:
-    summary(even_deeper_CNN.to('cuda'), input_size=(3, 224, 224))
-except:
-    summary(even_deeper_CNN.to('cpu'), input_size=(3, 224, 224))
-# summary(even_deeper_CNN, input_size=(3, 224, 224))
-metrics3 = train(even_deeper_CNN.to(device), train_loader, lr=0.00005, num_epochs=20)
-even_deeper_CNN.load_state_dict(torch.load('best_model.pth'))
-print("Loaded best model from:", 'best_model.pth')
+# even_deeper_CNN = EvenDeeperCNN(num_classes=num_classes).to(device)
+# try:
+#     summary(even_deeper_CNN.to('cuda'), input_size=(3, 224, 224))
+# except:
+#     summary(even_deeper_CNN.to('cpu'), input_size=(3, 224, 224))
+# # summary(even_deeper_CNN, input_size=(3, 224, 224))
+# metrics3 = train(even_deeper_CNN.to(device), train_loader, lr=0.00005, num_epochs=20)
+# even_deeper_CNN.load_state_dict(torch.load('best_model.pth'))
+# print("Loaded best model from:", 'best_model.pth')

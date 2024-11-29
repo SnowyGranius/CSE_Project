@@ -29,7 +29,7 @@ def read_circle_data(file_path):
             y_coord = np.append(y_coord, [y])
             radii = np.append(radii, [radius])
 
-def generate_image(image_name, image_shape=(1000, 1000)):
+def generate_image(image_name, image_shape=(2000, 2000)):
     # Create a blank binary image
     image = np.zeros(image_shape, dtype=np.uint8)
 
@@ -55,18 +55,24 @@ def generate_image(image_name, image_shape=(1000, 1000)):
             rr, cc = ellipse(x_coord_scaled[i], y_coord_scaled[i], radii_scaled[i], radii_scaled[i], shape=image_shape)
             image[rr, cc] = 1  # Foreground
 
+        half_height = image_shape[0] // 2
+        half_width = image_shape[1] // 2
+        image = image[:half_height, :half_width]
+
         image_name = image_name.split('.png')[0]
-        plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
+        plt.imsave(f'{current_directory}/quarter_scaled_images/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
         image = np.zeros(image_shape, dtype=np.uint8)
 
     for i in range(nr_circles):
         rr, cc = ellipse(x_coord_scaled[i], y_coord_scaled[i], radii_scaled[i]*0.5, radii_scaled[i], shape=image_shape)
         image[rr, cc] = 1  # Foreground
 
-    print(image)
+    half_height = image_shape[0] // 2
+    half_width = image_shape[1] // 2
+    image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/quarter_scaled_images/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
 
     image = np.zeros(image_shape, dtype=np.uint8)
     for i in range(nr_circles):
@@ -85,8 +91,12 @@ def generate_image(image_name, image_shape=(1000, 1000)):
         # Draw the rectangle
         image[rect_x_min:rect_x_max, rect_y_min:rect_y_max] = 1
 
+    half_height = image_shape[0] // 2
+    half_width = image_shape[1] // 2
+    image = image[:half_height, :half_width]
+
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/quarter_scaled_images/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
 
     # Generate isosceles triangle within the ellipse
     image = np.zeros(image_shape, dtype=np.uint8)
@@ -108,8 +118,12 @@ def generate_image(image_name, image_shape=(1000, 1000)):
         rr, cc = polygon(vertices[:, 0], vertices[:, 1], shape=image_shape)
         image[rr, cc] = 1
 
+    half_height = image_shape[0] // 2
+    half_width = image_shape[1] // 2
+    image = image[:half_height, :half_width]
+
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/quarter_scaled_images/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
 
 Models = np.arange(1, 26, 1)
 pfs = ['0.1', '0.2', '0.3', '0.4', '0.5']

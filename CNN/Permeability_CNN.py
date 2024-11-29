@@ -3,6 +3,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from torch import nn
+import torch.nn.functional as F
 from sklearn.metrics import accuracy_score
 import os
 import sys
@@ -10,6 +11,9 @@ import pandas as pd
 import glob
 import re
 from sklearn.model_selection import train_test_split
+from torchsummary import summary
+from scipy.stats import zscore
+
 
 # NLLLoss function expects float64 dtype
 torch.set_default_dtype(torch.float64)
@@ -20,7 +24,6 @@ csv_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys
 # csv_directory = 'C:\\Users\\ionst\\Documents\\GitHub\\Porespy_homogenous_diamater'
 if not os.path.exists(csv_directory):
     raise FileNotFoundError(f"Directory {csv_directory} does not exist.")
-print(csv_directory)
 
 #open all csv files in the directory and for each file store the packing fraction found in the name, the shape found in the name and the data in the file as a pandas dataframe
 data_csv = []
@@ -41,11 +44,15 @@ for file in all_csv:
         permeability_values.extend(df['Permeability'].values)
 
     permeability_values = np.array(permeability_values)
-#print(data_csv)
-print(permeability_values)
+    # Scale the permeability values using mean and variance
+    mean_permeability = np.mean(permeability_values)
+    std_permeability = np.std(permeability_values)
+    permeability_values = (permeability_values - mean_permeability) / std_permeability
 
 # Read images from the folder
-image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Circle_Images')
+# Circle_Images
+# quarter_scaled_images
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/quarter_scaled_images')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
@@ -69,11 +76,6 @@ for image_file in all_images:
             'Image': image
         })
 
-print(data_images)
-# Transform data_images to float64 format
-data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
-print(len(data_images))
-# Print the number of rows in data_csv
 num_rows = sum(len(df) for df in data_csv)
 print(f'Number of rows in data_csv: {num_rows}')
 
@@ -101,7 +103,45 @@ class PermeabilityDataset(torch.utils.data.Dataset):
         return self.X[i], self.y[i]
 
 
+class PermeabilityCNN_COPY(nn.Module):
+    def __init__(self):
+        super(PermeabilityCNN_COPY, self).__init__()
 
+        # Convolutional layers
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.conv6 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+
+        # pooling has no learnable parameters, so we can just use one
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # MLP classifier
+        self.fc = nn.Linear(28800, 1)
+
+    def forward(self, x):
+        # print("Input size:", x.size())
+        x = self.pool(F.relu(self.conv1(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv2(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv3(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv4(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv5(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv6(x)))
+        # print("Layer size:", x.size())
+        x = x.view(-1, 28800)  # Flatten the tensor
+        # print("Layer size:", x.size())
+
+        # Fully connected layer for classification
+        x = self.fc(x)
+
+        return x
 
 class PermeabilityCNN(nn.Module):
     """
@@ -114,39 +154,39 @@ class PermeabilityCNN(nn.Module):
             # Conv2d: https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
             # Input image has dimensions: [N, C, H, W]
             # 2D convolution layers are defined using the following hyperparameters
+
+            nn.MaxPool2d(kernel_size=5, stride=5),
+
             nn.Conv2d(
                 in_channels = 1,
                 out_channels = 32,
                 kernel_size = 3,
                 stride = 1,
+                padding = 1
             ), 
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),
 
-            nn.Conv2d(32, 64, kernel_size=5),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             
-            nn.Conv2d(64, 64, kernel_size=5),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             
-            nn.Conv2d(64, 128, kernel_size=5),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),
 
-            nn.Conv2d(128, 128, kernel_size=5),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
-
+            nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Flatten(),
             ############## MLP LAYERS #############
-            nn.Linear(15488, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1)
+            nn.Linear(4608, 1), # 4608, 18432, 51200,
+
         )
         
     def forward(self, x):
@@ -162,6 +202,11 @@ def count_parameters(model):
 # Set fixed random number seed for reproducibility of random initializations
 torch.manual_seed(42)
 
+torch.set_default_dtype(torch.float32)
+summary(PermeabilityCNN().to('cuda'), input_size=(1, 1000, 1000))
+torch.set_default_dtype(torch.float64)
+data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
+
 # Initialize the dataset objects
 train_images, test_images, train_permeability, test_permeability = train_test_split(
     data_images, permeability_values, test_size=0.30, random_state=42)
@@ -175,22 +220,23 @@ trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, 
 
 # Initialize the CNN
 cnn = PermeabilityCNN()
-print(cnn)
-print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
+cnn_copy = PermeabilityCNN_COPY()
+# print(cnn)
+# print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
 # Transfer model to your chosen device
 cnn.to(my_device)
 
 # Define the loss function and optimizer
 ## Neg-log-likelihood loss for classification task
 loss_function = nn.MSELoss()
-optimizer = torch.optim.Adam(cnn.parameters(), lr=1e-4)
+optimizer = torch.optim.Adam(cnn.parameters(), lr=1e-3)
 
 # Log loss and accuracy per epoch
 loss_per_epoch = []
-acc_per_epoch = []
+R_squared_per_epoch = []
 
 # Number of epochs to train
-n_epochs = 10
+n_epochs = 15
 
 # Run the training loop
 for epoch in range(0, n_epochs): # n_epochs at maximum
@@ -200,7 +246,7 @@ for epoch in range(0, n_epochs): # n_epochs at maximum
 
     # Log loss and accuracy per batch
     loss_per_batch = []
-    acc_per_batch = []
+    R_squared_per_batch = []
 
     # Iterate over batches of training data using the DataLoader
     for i, data in enumerate(trainloader, 0):
@@ -216,13 +262,18 @@ for epoch in range(0, n_epochs): # n_epochs at maximum
 
         # Perform forward pass
         outputs = cnn(inputs)
+        outputs = outputs.squeeze()
 
         # Compute loss
         loss = loss_function(outputs, targets)
         
         # Compute error (absolute difference) for accuracy calculation
         error = torch.abs(outputs - targets)
-        accuracy = 1 - torch.mean(error).item()
+        # Compute R^2 score
+        ss_residual = torch.sum((targets - outputs)**2)
+        ss_total = torch.sum((targets - torch.mean(targets))**2)
+        # print(ss_residual, ss_total)
+        R_squared = 1 - (ss_residual / ss_total)
 
         # Perform backwards pass
         loss.backward()
@@ -231,20 +282,25 @@ for epoch in range(0, n_epochs): # n_epochs at maximum
         optimizer.step()
         
         # Log loss value per batch
-        # loss_per_batch.append(loss.item())
-        acc_per_batch.append(accuracy)
+        loss_per_batch.append(loss.item())
+        R_squared_per_batch.append(R_squared.item())
 
     # Log loss value per epoch
     loss_per_epoch.append(np.mean(loss_per_batch))
     
     # Log accuracy value per epoch
-    acc_per_epoch.append(np.mean(acc_per_batch))
-    
-    print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, Accuracy = {acc_per_epoch[epoch]}')
+    R_squared_per_epoch.append(np.mean(R_squared_per_batch))
+    torch.save(cnn.state_dict(), 'best_model.pth')
+    print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
     
     
 # Process is complete.
 print('Training process has finished.')
+
+#scale back the permeability values
+train_permeability = train_permeability * std_permeability + mean_permeability
+test_permeability = test_permeability * std_permeability + mean_permeability
+
 
 fig, axs = plt.subplots(2,1,figsize=(8,8))
 # Plot loss per epoch
@@ -254,7 +310,7 @@ axs[0].set_xlabel('Epoch')
 axs[0].set_ylabel('Neg-log-likelihood Loss')
 axs[0].legend()
 # Plot accuracy per epoch
-axs[1].plot(np.arange(1,len(acc_per_epoch)+1), acc_per_epoch, color='blue', label='Training accuracy', marker='x')
+axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training accuracy', marker='x')
 axs[1].grid(True)
 axs[1].set_xlabel('Epoch')
 axs[1].set_ylabel('Accuracy')
@@ -268,27 +324,34 @@ cnn.eval()
 with torch.no_grad():
     test_inputs = dataset_test.X.to(my_device)
     outputs = cnn(test_inputs)
-    predicted_labels = torch.argmax(outputs, dim=1).cpu()
 
-test_predictions = np.array(predicted_labels)
+test_predictions = outputs.cpu().numpy()
 test_targets = np.array(dataset_test.y)
+# Identify outliers in the dataset
 
-test_accuracy = accuracy_score(test_predictions, test_targets)
+# Calculate z-scores of the test targets
+z_scores = zscore(test_targets)
 
-print(f'Accuracy Score on test set: {test_accuracy}')
+# Define a threshold for identifying outliers
+threshold = 2
+
+# Identify outliers
+outliers = np.where(np.abs(z_scores) > threshold)[0]
+
+print(f'Number of outliers: {len(outliers)}')
+print(f'Outliers indices: {outliers}')
+print(f'Outliers values: {test_targets[outliers]}')
 
 
-# Helper function to visualize the MNIST image, ground truth and predicted labels on a subplot axis
-def visualize_predictions(x,y,y_pred,ax):
-    ax.imshow(x, cmap='gray')
-    ax.set(
-        title = f'Ground truth: {y}\nPrediction: {y_pred}',
-        xticks = [],
-        yticks = [],
-    )
 
-fig, axes = plt.subplots(2,4, layout='tight')
-axs = axes.flatten()
-random_ids = random.sample(list(range(x_test.shape[0])), 8)
-for i, id in enumerate(random_ids):
-    axs[i] = visualize_predictions(test_inputs[id,0,...].cpu(), test_targets[id], test_predictions[id], axs[i])
+# Visualize the ground truth on x axis and predicted values on y axis
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
+ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
+ax.set_xlabel('Ground Truth')
+ax.set_ylabel('Predicted')
+ax.set_title('Ground Truth vs Predicted Values')
+ax.legend()
+# r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
+ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch-1]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+plt.show()
