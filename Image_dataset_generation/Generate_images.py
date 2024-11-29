@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from skimage.draw import ellipse
+import re
 
 current_directory = os.path.dirname(os.path.abspath(sys.argv[0])) 
 print(current_directory)
@@ -13,6 +14,7 @@ x_coord = np.array([])
 y_coord = np.array([])
 radii = np.array([])
 
+global model
 
 def read_circle_data(file_path):
     print(file_path)
@@ -31,6 +33,9 @@ def generate_image(image_name, image_shape=(1000, 1000)):
     # Create a blank binary image
     image = np.zeros(image_shape, dtype=np.uint8)
 
+    packing_fraction = re.search(r'\d\.\d+', image_name).group()
+    model_name = re.search(r'Model_\d+', image_name).group()
+
     # Create scalers to scale the coordinates to the image size
     x_min = np.min(x_coord)
     x_max = np.max(x_coord)
@@ -45,21 +50,23 @@ def generate_image(image_name, image_shape=(1000, 1000)):
     radii_scaled = radii * x_scaler  # Or y scaler?
 
     nr_circles = len(x_coord)
-    for i in range(nr_circles):
-        rr, cc = ellipse(x_coord_scaled[i], y_coord_scaled[i], radii_scaled[i], radii_scaled[i], shape=image_shape)
-        image[rr, cc] = 1  # Foreground
+    if model<21:
+        for i in range(nr_circles):
+            rr, cc = ellipse(x_coord_scaled[i], y_coord_scaled[i], radii_scaled[i], radii_scaled[i], shape=image_shape)
+            image[rr, cc] = 1  # Foreground
 
-    image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Circle_Images/{image_name}_circle.png', image, cmap='gray')
+        image_name = image_name.split('.png')[0]
+        plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
+        image = np.zeros(image_shape, dtype=np.uint8)
 
-    image = np.zeros(image_shape, dtype=np.uint8)
-    nr_circles = len(x_coord)
     for i in range(nr_circles):
         rr, cc = ellipse(x_coord_scaled[i], y_coord_scaled[i], radii_scaled[i]*0.5, radii_scaled[i], shape=image_shape)
         image[rr, cc] = 1  # Foreground
 
+    print(image)
+
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Circle_Images/{image_name}_ellipse.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
 
     image = np.zeros(image_shape, dtype=np.uint8)
     for i in range(nr_circles):
@@ -79,7 +86,7 @@ def generate_image(image_name, image_shape=(1000, 1000)):
         image[rect_x_min:rect_x_max, rect_y_min:rect_y_max] = 1
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Circle_Images/{image_name}_rectangle.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
 
     # Generate isosceles triangle within the ellipse
     image = np.zeros(image_shape, dtype=np.uint8)
@@ -102,7 +109,7 @@ def generate_image(image_name, image_shape=(1000, 1000)):
         image[rr, cc] = 1
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Circle_Images/{image_name}_triangle.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Circle_Images/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
 
 Models = np.arange(1, 26, 1)
 pfs = ['0.1', '0.2', '0.3', '0.4', '0.5']

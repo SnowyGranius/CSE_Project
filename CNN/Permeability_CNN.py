@@ -9,6 +9,7 @@ import sys
 import pandas as pd
 import glob
 import re
+from sklearn.model_selection import train_test_split
 
 # NLLLoss function expects float64 dtype
 torch.set_default_dtype(torch.float64)
@@ -29,82 +30,62 @@ for file in all_csv:
     packing_fraction = re.search(r'\d\.\d+', file).group()
     shape = re.search(r'circle|ellipse|rectangle|triangle', file).group()
     df = pd.read_csv(file)
-    df['Packing Fraction'] = packing_fraction
+    df['Packing_Fraction'] = packing_fraction
     df['Shape'] = shape
+    df['Model'] = df.index + 1  # Model number is one higher than the index of the dataframe
     data_csv.append(df)
 
-print(data_csv)
+    # Extract permeability values from data_csv
+    permeability_values = []
+    for df in data_csv:
+        permeability_values.extend(df['Permeability'].values)
 
-# image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation\\Circle_Images')
-# all_images = glob.glob(os.path.join(image_directory, "*.png"))
+    permeability_values = np.array(permeability_values)
+#print(data_csv)
+print(permeability_values)
 
-# for image in all_images:
-#     packing_fraction = re.search(r'\d\.\d+', image).group()
-#     shape = re.search(r'circle|ellipse|rectangle|triangle', image).group()
-#     data_images.append([packing_fraction, shape, image])
+# Read images from the folder
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Circle_Images')
+if not os.path.exists(image_directory):
+    raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
-# #add another column to the pandas dataframe that stores the name of the corresponding image
-# for i in range(len(data_csv)):
-#     for j in range(len(data_images)):
-#         if data_csv[i][0] == data_images[j][0] and data_csv[i][1] == data_images[j][1]:
-#             data_csv[i].append(data_images[j][2])
+all_images = glob.glob(os.path.join(image_directory, "*.png"))
+# print(all_images)
+for image_file in all_images:
+    match = re.search(r'pf_(\d\.\d+)_(circle|ellipse|rectangle|triangle)_Model_(\d+)\.png', image_file)
+    if match:
+        packing_fraction = float(match.group(1))
+        shape = match.group(2)
+        model_number = int(match.group(3))
+        image = plt.imread(image_file)
+        if image.ndim == 3:
+            # image = image[:, :, :3]  # Ignore the alpha channel
+            image = image[:, :, 0]  # Take only the first channel
+        
+        data_images.append({
+            # 'Model': model_number,
+            # 'Packing_Fraction': packing_fraction,
+            # 'Shape': shape,
+            'Image': image
+        })
 
-# #save the data in a csv file
-# data_csv = pd.DataFrame(data_csv, columns = ['Packing Fraction', 'Shape', 'Data', 'Image'])
-# data_csv.to_csv('data.csv', index=False)
+print(data_images)
+# Transform data_images to float64 format
+data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
+print(len(data_images))
+# Print the number of rows in data_csv
+num_rows = sum(len(df) for df in data_csv)
+print(f'Number of rows in data_csv: {num_rows}')
 
 
-# print(data_csv)
-
-
-
-
-
-
-
-# print(f'Shape of training inputs: {x_train.shape}')
-# print(f'Shape of training labels: {y_train.shape}')
-# print(f'Shape of test inputs: {x_test.shape}')
-# print(f'Shape of test labels: {y_test.shape}')
-
-# # Helper function to visualize th image and its label on a subplot axis
-# def visualize_data(x,y,ax):
-#     ax.imshow(x, cmap='gray')
-#     ax.set(title = f'Label: {y}', xticks = [], yticks = [])
-
-# fig, axes = plt.subplots(2,4, layout='tight')
-# axs = axes.flatten()
-# random_ids = random.sample(list(range(x_test.shape[0])), 8)
-# for i, id in enumerate(random_ids):
-#     axs[i] = visualize_data(x_test[id,...], y_test[id], axs[i])
-# plt.show()
-
-# print(f'Minimum value in training images: {np.min(x_train)}')
-# print(f'Maximum value in training images: {np.max(x_train)}')
-
-# x_train = x_train / 255. 
-# x_test = x_test / 255.
-# print(f'Minimum value in training images: {np.min(x_train)}')
-# print(f'Maximum value in training images: {np.max(x_train)}')
-
-# x_mean = np.mean(x_train)
-# x_std = np.std(x_train)
-# print(f'Mean of x_train = {x_mean}') 
-# print(f'Std  of x_train = {x_std}')
-
-class MNISTDataset(torch.utils.data.Dataset):
+class PermeabilityDataset(torch.utils.data.Dataset):
     '''
-    MNIST dataset class for classification
+    Permeability dataset class for regression
     '''
-    def __init__(self, X, y, scale_data = True):
+    def __init__(self, X, y):
         # Precomputed training set statistics for scaling
-        self.X_mean = 0.1306604762738429
-        self.X_std  = 0.3081078038564622
         if not torch.is_tensor(X) and not torch.is_tensor(y):
             # Apply scaling if necessary
-            if scale_data:
-                # Standardization: Z = (X - mean) / std
-                X = (X - self.X_mean) / self.X_std
             # X is of shape [N, H, W], the CNN expects input [N, Channels, H, W]
             # The image is greyscale (contains only 1 channel), add a dummy channel dimension
             X = np.expand_dims(X, axis=1)
@@ -119,7 +100,10 @@ class MNISTDataset(torch.utils.data.Dataset):
     # This is the method that returns the input, target data during model training
         return self.X[i], self.y[i]
 
-class MNISTClassifierCNN(nn.Module):
+
+
+
+class PermeabilityCNN(nn.Module):
     """
     CNN model for classification task on MNIST dataset
     """
@@ -136,17 +120,19 @@ class MNISTClassifierCNN(nn.Module):
                 kernel_size = 5,
                 stride = 1,
             ), 
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(10, 20, kernel_size=5),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
 
             nn.Flatten(),
             ############## MLP LAYERS #############
-            nn.Linear(320, 64),
+            nn.Linear(1220180, 64),
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, 10)
+            nn.Linear(32, 1)
         )
         
     def forward(self, x):
@@ -163,15 +149,18 @@ def count_parameters(model):
 torch.manual_seed(42)
 
 # Initialize the dataset objects
-dataset_train = MNISTDataset(X=x_train, y=y_train, scale_data=True)
-dataset_test = MNISTDataset(X=x_test, y=y_test, scale_data=True)
+train_images, test_images, train_permeability, test_permeability = train_test_split(
+    data_images, permeability_values, test_size=0.30, random_state=42)
+
+dataset_train = PermeabilityDataset(X=train_images, y=train_permeability)
+dataset_test = PermeabilityDataset(X=test_images, y=test_permeability)
 
 # Initialize the dataloader using batch size hyperparameter
 batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
 # Initialize the CNN
-cnn = MNISTClassifierCNN()
+cnn = PermeabilityCNN()
 print(cnn)
 print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
 # Transfer model to your chosen device
@@ -179,7 +168,7 @@ cnn.to(my_device)
 
 # Define the loss function and optimizer
 ## Neg-log-likelihood loss for classification task
-loss_function = nn.NLLLoss()
+loss_function = nn.MSELoss()
 optimizer = torch.optim.Adam(cnn.parameters(), lr=1e-4)
 
 # Log loss and accuracy per epoch
@@ -217,10 +206,9 @@ for epoch in range(0, n_epochs): # n_epochs at maximum
         # Compute loss
         loss = loss_function(outputs, targets)
         
-        # Compute accuracy metric by converting the tensors to numpy
-        ## Find the highest softmax probability to get the predicted label
-        pred_labels = torch.argmax(outputs, dim=1).cpu().numpy()
-        accuracy = accuracy_score(pred_labels, targets.detach().cpu().numpy())
+        # Compute error (absolute difference) for accuracy calculation
+        error = torch.abs(outputs - targets)
+        accuracy = 1 - torch.mean(error).item()
 
         # Perform backwards pass
         loss.backward()
@@ -229,7 +217,7 @@ for epoch in range(0, n_epochs): # n_epochs at maximum
         optimizer.step()
         
         # Log loss value per batch
-        loss_per_batch.append(loss.item())
+        # loss_per_batch.append(loss.item())
         acc_per_batch.append(accuracy)
 
     # Log loss value per epoch
