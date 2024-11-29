@@ -10,7 +10,7 @@ import sys
 # NLLLoss function expects float64 dtype
 torch.set_default_dtype(torch.float64)
 
-my_device = torch.device('cpu')
+my_device = torch.device('gpu')
 
 current_directory = os.path.dirname(os.path.abspath(sys.argv[0])) 
 print(current_directory)
