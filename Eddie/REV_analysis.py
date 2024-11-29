@@ -6,22 +6,23 @@ from skimage.measure import euler_number
 import os
 import pandas as pd
 
-DATA_GEN=True
+DATA_GEN=False
 DATA_ANALYSIS=True
 DATA_PLOTTING=True
+make_subfolder=False
 
-
-b=5
-p=0.75
+#Keep blobiness fixed
+b=15
+p=0.95
 
 #------------------IMAGE & DATA GENERATION---------------#
 if DATA_GEN:
-    #for resolution in range(800, 1000, 100):
-        resolution=800
+    for resolution in range(50, 1100, 50):
+        #resolution=800
         #os.makedirs(f'subimages_{resolution}_porosity_{p}_blob_{b}', exist_ok=True)
         # 1 = pore space, 0 = solid space
         grid_size = 25  # Define the size of the grid
-        fig1, ax1 = plt.subplots(1, 1, figsize=[6, 6])
+        #fig1, ax1 = plt.subplots(1, 1, figsize=[6, 6])
         #fig2, ax2 = plt.subplots(1, 1, figsize=[6, 6])
 
         im = ps.generators.blobs(shape=[resolution, resolution], porosity=p, blobiness=b, seed=10)
@@ -37,20 +38,21 @@ if DATA_GEN:
         subsampled_im = im[yv.astype(int), xv.astype(int)]
 
         # Plot the original image
-        ax1.imshow(im, cmap='gray')
-        ax1.set_title('Original Image')
-        ax1.axis('off')
+        #ax1.imshow(im, cmap='gray')
+        #ax1.set_title('Original Image')
+        #ax1.axis('off')
 
 
         # Plot the subsampled image
         script_dir = os.path.dirname(__file__)
         base_path=script_dir
         sub_path='REV_files'
-        path=os.path.join(base_path, sub_path)
-        new_folder = f'subimages_{resolution}_porosity_{p}_blob_{b}'
-        new_folder_path = os.path.join(path, new_folder)
-        os.makedirs(new_folder_path, exist_ok=True)
-        for k in range(2, 11):
+        path=os.path.join(base_path, sub_path, 'Resolution_Determination')
+        if make_subfolder:
+            new_folder = f'subimages_{resolution}_porosity_{p}_blob_{b}'
+            new_folder_path = os.path.join(path, new_folder)
+            os.makedirs(new_folder_path, exist_ok=True)
+        for k in range(10, 11):
             if resolution % k==0:
                 # Split the original image into subimages
                 subimages = []
@@ -61,7 +63,7 @@ if DATA_GEN:
                         subimages.append(sub)
 
                         M0 = ps.metrics.porosity(sub)
-                        per4 = perimeter(sub, 4)
+                        per4 = perimeter_crofton(sub, 4)
                         sub_inv = np.invert(sub)
                         M2 = euler_number(sub_inv, connectivity = 1)
                         # Check if the file exists
@@ -80,7 +82,7 @@ if DATA_GEN:
                             df = new_data
                         # Write the DataFrame back to the CSV file
                         df.to_csv(csv_file, index=False)
-                
+                '''
                 # Plot all subimages in one figure
                 fig, axes = plt.subplots(k, k, figsize=[12, 12])
                 # Ensure axes is always a 2D array, even if k=1
@@ -93,7 +95,7 @@ if DATA_GEN:
                 plt.tight_layout()
                 plt.savefig(os.path.join(new_folder_path, f'subimages_{resolution}_{k}.png'))
                 #plt.close()
-                
+                '''
             else:
                 pass
 
@@ -102,12 +104,12 @@ if DATA_GEN:
 if DATA_ANALYSIS:
     script_dir = os.path.dirname(__file__)
     base_path=script_dir
-    path=os.path.join(base_path, 'REV_files', f'porosity_{p}_individual_MF_blobiness_{b}.csv')
+    path=os.path.join(base_path, 'REV_files', 'Resolution_Determination', f'porosity_{p}_individual_MF_blobiness_{b}.csv')
     data = pd.read_csv(path)
 
     # Extract M0, M1, and M2 columns
     M0 = data['M0']
-    M1 = data['M1']
+    M1 = data['M1']/4
     M2 = data['M2']
     subsamples=data['Subsamples']
     ###--------------DATA FILTERING---------------###
@@ -121,23 +123,64 @@ if DATA_ANALYSIS:
             filtered_data = data[data['Resolution'] == resolution]
             subsample_nr = filtered_data['Subsamples']
             
-            M0_filtered = filtered_data['M0']
-            M1_filtered = filtered_data['M1']
-            M2_filtered = filtered_data['M2']
-            avg_M0 = filtered_data.groupby(1/subsample_nr)['M0'].mean()
-            avg_M1 = filtered_data.groupby(1/subsample_nr)['M1'].mean()
-            avg_M2 = filtered_data.groupby(1/subsample_nr)['M2'].mean()
-            #print(subsample_nr, avg_M0)
-            M0_std = filtered_data.groupby(1/subsample_nr)['M0'].std()
-            M1_std = filtered_data.groupby(1/subsample_nr)['M1'].std()
-            M2_std = filtered_data.groupby(1/subsample_nr)['M2'].std()
-            print("Rel. Error", M0_std/(np.sqrt(subsample_nr.iloc[0])*avg_M0), M1_std/(np.sqrt(subsample_nr.iloc[0])*avg_M1), M2_std/(np.sqrt(subsample_nr.iloc[0])*avg_M2))
+            M0_filtered = filtered_data[filtered_data['Subsamples'] == 100]['M0']
+            M1_filtered = filtered_data[filtered_data['Subsamples'] == 100]['M1']
+            M2_filtered = filtered_data[filtered_data['Subsamples'] == 100]['M2']
+            avg_M0 = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M0'].mean()
+            avg_M1 = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M1'].mean()
+            avg_M2 = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M2'].mean()
+            #print(subsample_nr, avg_M1)
+            M0_std = filtered_data[filtered_data['Subsamples'] == 400].groupby(1/subsample_nr)['M0'].std()
+            M1_std = filtered_data[filtered_data['Subsamples'] == 400].groupby(1/subsample_nr)['M1'].std()
+            M2_std = filtered_data[filtered_data['Subsamples'] == 400].groupby(1/subsample_nr)['M2'].std()
+            #print("Rel. Error", M0_std/(np.sqrt(subsample_nr.iloc[0])*avg_M0), M1_std/(np.sqrt(subsample_nr.iloc[0])*avg_M1), M2_std/(np.sqrt(subsample_nr.iloc[0])*avg_M2))
             ax.scatter(avg_M0.index, avg_M0.values, color='red', label='Average M0') 
-            scatter = ax.scatter(1/subsample_nr, M0_filtered, label=f'Resolution {resolution}')
+            #scatter = ax.scatter(1/subsample_nr, M0_filtered, label=f'Resolution {resolution}')
             ax.set_xlabel('1/Subsamples')
             ax.set_ylabel('M0') 
         plt.tight_layout()
         plt.show()
+        fig, axes = plt.subplots(3, 1, figsize=(10, 15), sharex=True)
+        # Plot M0
+        ax = axes[0]
+        ax.set_title('Mean M0 vs Resolution')
+        for resolution in resolutions:
+            filtered_data = data[data['Resolution'] == resolution]
+            avg_M0 = filtered_data.groupby('Resolution')['M0'].mean()
+            ax.plot(avg_M0.index/np.sqrt((filtered_data['Subsamples'].iloc[0])), avg_M0.values, marker='o', label=f'Resolution {resolution}')
+        ax.set_ylabel('Mean M0')
+        #ax.legend()
+        
+        # Plot M1
+        ax = axes[1]
+        ax.set_title('Mean M1 vs Resolution')
+        for resolution in resolutions:
+            filtered_data = data[data['Resolution'] == resolution]
+            avg_M1 = filtered_data.groupby('Resolution')['M1'].mean()
+            subimage_resolution = resolution // int(np.sqrt(filtered_data['Subsamples'].iloc[0]))
+            ax.plot(avg_M1.index/np.sqrt((filtered_data['Subsamples'].iloc[0])), avg_M1.values/subimage_resolution, marker='o', label=f'Resolution {resolution}')
+        ax.set_ylabel('Mean M1')
+        #ax.legend()
+
+        # Plot M2
+        ax = axes[2]
+        ax.set_title('Mean M2 vs Resolution')
+        for resolution in resolutions:
+            filtered_data = data[data['Resolution'] == resolution]
+            avg_M2 = filtered_data.groupby('Resolution')['M2'].mean()
+            ax.plot(avg_M2.index/np.sqrt((filtered_data['Subsamples'].iloc[0])), avg_M2.values, marker='o', label=f'Resolution {resolution}')
+        ax.set_xlabel('Resolution')
+        ax.set_ylabel('Mean M2')
+        #ax.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+
+# For 10x10, determine the desired resolution.
+
+
+
     # ax.legend()
     # # Extract M0, M1, and M2 columns for the filtered data
     # M0_filtered = data['M0']
