@@ -9,8 +9,8 @@ import sys
 
 # NLLLoss function expects float64 dtype
 torch.set_default_dtype(torch.float64)
-# Assuming default device as 'cpu'. If GPU is desired, use 'cuda'
-my_device = torch.device('cuda')
+
+my_device = torch.device('gpu')
 
 current_directory = os.path.dirname(os.path.abspath(sys.argv[0])) 
 print(current_directory)
@@ -26,7 +26,7 @@ print(f'Shape of training labels: {y_train.shape}')
 print(f'Shape of test inputs: {x_test.shape}')
 print(f'Shape of test labels: {y_test.shape}')
 
-# Helper function to visualize the MNIST image and its label on a subplot axis
+# Helper function to visualize th image and its label on a subplot axis
 def visualize_data(x,y,ax):
     ax.imshow(x, cmap='gray')
     ax.set(title = f'Label: {y}', xticks = [], yticks = [])
@@ -36,6 +36,7 @@ axs = axes.flatten()
 random_ids = random.sample(list(range(x_test.shape[0])), 8)
 for i, id in enumerate(random_ids):
     axs[i] = visualize_data(x_test[id,...], y_test[id], axs[i])
+plt.show()
 
 print(f'Minimum value in training images: {np.min(x_train)}')
 print(f'Maximum value in training images: {np.max(x_train)}')
@@ -64,7 +65,7 @@ class MNISTDataset(torch.utils.data.Dataset):
                 # Standardization: Z = (X - mean) / std
                 X = (X - self.X_mean) / self.X_std
             # X is of shape [N, H, W], the CNN expects input [N, Channels, H, W]
-            # The image is greyscale (contains only 1 channel), so we need to add a dummy channel dimension
+            # The image is greyscale (contains only 1 channel), add a dummy channel dimension
             X = np.expand_dims(X, axis=1)
             # Convert to Pytorch tensor objects
             self.X = torch.tensor(X)
@@ -102,9 +103,8 @@ class MNISTClassifierCNN(nn.Module):
             nn.Conv2d(10, 20, kernel_size=5),
             # Apply 2x2 pooling operations to reduce image height and width by half
             nn.MaxPool2d(kernel_size=2),
-            # Now we flatten the output image [N, c, h, w] of the previous layer to [N, c*h*w] using a Flatten layer
+
             nn.Flatten(),
-            # You have to precompute c*h*w to correctly define the MLP layers
             ############## MLP LAYERS #############
             # An input of 320 nodes to a layer of 64 nodes, 8 nodes is chosen for the 8 features of the dataset
             nn.Linear(320, 64),
@@ -116,7 +116,6 @@ class MNISTClassifierCNN(nn.Module):
             nn.ReLU(),
             # Final layer takes 32 nodes and compresses to 10 nodes
             nn.Linear(32, 10),
-            # ONLY FOR CLASSIFICATION TASK: we apply Log softmax activation. For regression tasks, you should use the output layer without activations
             nn.LogSoftmax(dim=1)
         )
         
