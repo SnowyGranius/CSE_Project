@@ -116,19 +116,33 @@ class PermeabilityCNN(nn.Module):
             # 2D convolution layers are defined using the following hyperparameters
             nn.Conv2d(
                 in_channels = 1,
-                out_channels = 10,
-                kernel_size = 5,
+                out_channels = 32,
+                kernel_size = 3,
                 stride = 1,
             ), 
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
-            nn.Conv2d(10, 20, kernel_size=5),
+
+            nn.Conv2d(32, 64, kernel_size=5),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            
+            nn.Conv2d(64, 64, kernel_size=5),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            
+            nn.Conv2d(64, 128, kernel_size=5),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
 
+            nn.Conv2d(128, 128, kernel_size=5),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+
+
             nn.Flatten(),
             ############## MLP LAYERS #############
-            nn.Linear(1220180, 64),
+            nn.Linear(15488, 64),
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
