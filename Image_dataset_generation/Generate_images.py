@@ -102,16 +102,16 @@ def generate_image(image_name, image_shape=(2000, 2000)):
     image = np.zeros(image_shape, dtype=np.uint8)
     for i in range(nr_circles):
         # Calculate triangle vertices
-        base_half = radii_scaled[i] / np.sqrt(2)
-        height = radii_scaled[i] / np.sqrt(2)
+        base = radii_scaled[i]*np.sqrt(2)
+        height = radii_scaled[i]  # 22.5 degrees
 
         x_center = x_coord_scaled[i]
         y_center = y_coord_scaled[i]
 
         vertices = np.array([
             [x_center, y_center - height],  # Top vertex
-            [x_center - base_half, y_center + base_half],  # Bottom left vertex
-            [x_center + base_half, y_center + base_half]   # Bottom right vertex
+            [x_center - base/2, y_center + base/2],  # Bottom left vertex
+            [x_center + base/2, y_center + base/2]   # Bottom right vertex
         ])
 
         # Draw the triangle

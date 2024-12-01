@@ -43,16 +43,20 @@ for file in all_csv:
     for df in data_csv:
         permeability_values.extend(df['Permeability'].values)
 
-    permeability_values = np.array(permeability_values)
-    # Scale the permeability values using mean and variance
-    mean_permeability = np.mean(permeability_values)
-    std_permeability = np.std(permeability_values)
-    permeability_values = (permeability_values - mean_permeability) / std_permeability
+permeability_values = np.array(permeability_values)
+# Scale the permeability values using mean and variance
+mean_permeability = np.mean(permeability_values)
+std_permeability = np.std(permeability_values)
+permeability_values = (permeability_values - mean_permeability) / std_permeability
+
+    # Find the index of specific permeability values
+value1 = 3.15602165
+value2 = 2.58321055
 
 # Read images from the folder
 # Circle_Images
 # quarter_scaled_images
-image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/quarter_scaled_images')
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Circle_Images')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
@@ -341,6 +345,7 @@ outliers = np.where(np.abs(z_scores) > threshold)[0]
 print(f'Number of outliers: {len(outliers)}')
 print(f'Outliers indices: {outliers}')
 print(f'Outliers values: {test_targets[outliers]}')
+
 
 
 
