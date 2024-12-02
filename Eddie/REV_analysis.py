@@ -6,10 +6,11 @@ from skimage.measure import euler_number
 import os
 import pandas as pd
 
-DATA_GEN=False
+DATA_GEN=True
 DATA_ANALYSIS=True
 DATA_PLOTTING=True
 make_subfolder=False
+image_generation=True
 
 #Keep blobiness fixed
 b=15
@@ -38,9 +39,10 @@ if DATA_GEN:
         subsampled_im = im[yv.astype(int), xv.astype(int)]
 
         # Plot the original image
-        #ax1.imshow(im, cmap='gray')
-        #ax1.set_title('Original Image')
-        #ax1.axis('off')
+        # ax1.imshow(im, cmap='gray')
+        # ax1.set_title('Original Image')
+        # ax1.axis('off')
+        # plt.show()
 
 
         # Plot the subsampled image
@@ -82,22 +84,22 @@ if DATA_GEN:
                             df = new_data
                         # Write the DataFrame back to the CSV file
                         df.to_csv(csv_file, index=False)
-                '''
-                # Plot all subimages in one figure
-                fig, axes = plt.subplots(k, k, figsize=[12, 12])
-                # Ensure axes is always a 2D array, even if k=1
-                for idx, subimage in enumerate(subimages):
-                    if idx < k * k:
-                        ax = axes[idx // k, idx % k]
-                        ax.imshow(subimage, cmap='gray', interpolation='none')
-                        ax.axis('off')
-                        ax.set_title(f'Subimage {idx + 1}')
-                plt.tight_layout()
-                plt.savefig(os.path.join(new_folder_path, f'subimages_{resolution}_{k}.png'))
-                #plt.close()
-                '''
-            else:
-                pass
+                if image_generation:
+                    # Plot all subimages in one figure
+                    fig, axes = plt.subplots(k, k, figsize=[12, 12])
+                    # Ensure axes is always a 2D array, even if k=1
+                    for idx, subimage in enumerate(subimages):
+                        if idx < k * k:
+                            ax = axes[idx // k, idx % k]
+                            ax.imshow(subimage, cmap='gray', interpolation='none')
+                            ax.axis('off')
+                            ax.set_title(f'Subimage {idx + 1}')
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(new_folder_path, f'subimages_{resolution}_{k}.png'))
+                    #plt.close()
+                    
+                else:
+                    pass
 
 
 #------------------DATA PLOTTING-------------------------#
