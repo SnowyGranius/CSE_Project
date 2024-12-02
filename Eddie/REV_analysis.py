@@ -130,9 +130,9 @@ if DATA_ANALYSIS:
             avg_M1 = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M1'].mean()
             avg_M2 = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M2'].mean()
             #print(subsample_nr, avg_M1)
-            M0_std = filtered_data[filtered_data['Subsamples'] == 400].groupby(1/subsample_nr)['M0'].std()
-            M1_std = filtered_data[filtered_data['Subsamples'] == 400].groupby(1/subsample_nr)['M1'].std()
-            M2_std = filtered_data[filtered_data['Subsamples'] == 400].groupby(1/subsample_nr)['M2'].std()
+            M0_std = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M0'].std()
+            M1_std = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M1'].std()
+            M2_std = filtered_data[filtered_data['Subsamples'] == 100].groupby(1/subsample_nr)['M2'].std()
             #print("Rel. Error", M0_std/(np.sqrt(subsample_nr.iloc[0])*avg_M0), M1_std/(np.sqrt(subsample_nr.iloc[0])*avg_M1), M2_std/(np.sqrt(subsample_nr.iloc[0])*avg_M2))
             ax.scatter(avg_M0.index, avg_M0.values, color='red', label='Average M0') 
             #scatter = ax.scatter(1/subsample_nr, M0_filtered, label=f'Resolution {resolution}')
@@ -143,7 +143,7 @@ if DATA_ANALYSIS:
         fig, axes = plt.subplots(3, 1, figsize=(10, 15), sharex=True)
         # Plot M0
         ax = axes[0]
-        ax.set_title('Mean M0 vs Resolution')
+        ax.set_title(f'Mean M0 vs Resolution, blobiness={b}, porosity={p}')
         for resolution in resolutions:
             filtered_data = data[data['Resolution'] == resolution]
             avg_M0 = filtered_data.groupby('Resolution')['M0'].mean()
