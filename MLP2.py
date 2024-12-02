@@ -379,7 +379,7 @@ def symbolic_regressor_model(X_train, y_train, X_test, y_test):
     plt.show()
 
 
-pathlist = ['Datasets/Porespy_homogenous_diamater', 'Datasets/Heterogeneous_samples', 'Datasets/Threshold_homogenous_diamater_small_RCP', 'Datasets/Threshold_homogenous_diamater_wide_RCP']
+pathlist = ['Eddie/Porespy_homogenous_diamater', 'Eddie/Heterogeneous_samples', 'Eddie/Threshold_homogenous_diamater_small_RCP', 'Eddie/Threshold_homogenous_diamater_wide_RCP']
 
 for path in pathlist:
     all_files = glob.glob(os.path.join(path, '*.csv'))
@@ -400,13 +400,13 @@ for path in pathlist:
 
     #cross_validate_mlp(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, mlp, 5, True, n_epochs, batch_size, learning_rate)
     
-    GAM_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+    #GAM_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
 
     #decision_tree(X_train, y_train, X_test, y_test)
 
     #SR_sindy_prediciton(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
 
-    #symbolic_regressor_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+    symbolic_regressor_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
 
     # ellipse_exists = False
 
