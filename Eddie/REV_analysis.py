@@ -10,15 +10,18 @@ DATA_GEN=True
 DATA_ANALYSIS=True
 DATA_PLOTTING=True
 make_subfolder=False
-image_generation=True
+image_generation=False
 
 #Keep blobiness fixed
 b=15
 p=0.95
 
+#subsample nr per side
+im_nrs=20
+
 #------------------IMAGE & DATA GENERATION---------------#
 if DATA_GEN:
-    for resolution in range(50, 1100, 50):
+    for resolution in range(50, 650, 50):
         #resolution=800
         #os.makedirs(f'subimages_{resolution}_porosity_{p}_blob_{b}', exist_ok=True)
         # 1 = pore space, 0 = solid space
@@ -54,7 +57,7 @@ if DATA_GEN:
             new_folder = f'subimages_{resolution}_porosity_{p}_blob_{b}'
             new_folder_path = os.path.join(path, new_folder)
             os.makedirs(new_folder_path, exist_ok=True)
-        for k in range(10, 11):
+        for k in range(im_nrs, im_nrs+1):
             if resolution % k==0:
                 # Split the original image into subimages
                 subimages = []
@@ -71,7 +74,7 @@ if DATA_GEN:
                         # Check if the file exists
                         new_data = pd.DataFrame([[resolution, k**2, p, b, M0, per4, M2]], columns=['Resolution','Subsamples', 'Porosity', 'Blobiness', 'M0', 'M1', 'M2'])
 
-                        csv_file = os.path.join(path, f'porosity_{p}_individual_MF_blobiness_{b}.csv')
+                        csv_file = os.path.join(path, f'porosity_{p}_individual_MF_blobiness_{b}_sub_{im_nrs}.csv')
                         file_exists = os.path.isfile(csv_file)
 
                         if file_exists:
@@ -106,7 +109,7 @@ if DATA_GEN:
 if DATA_ANALYSIS:
     script_dir = os.path.dirname(__file__)
     base_path=script_dir
-    path=os.path.join(base_path, 'REV_files', 'Resolution_Determination', f'porosity_{p}_individual_MF_blobiness_{b}.csv')
+    path=os.path.join(base_path, 'REV_files', 'Resolution_Determination', f'porosity_{p}_individual_MF_blobiness_{b}_sub_{im_nrs}.csv')
     data = pd.read_csv(path)
 
     # Extract M0, M1, and M2 columns
