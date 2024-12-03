@@ -200,4 +200,3 @@ for path in pathlist:
     plt.axis('equal')
     plt.show()
 
-
