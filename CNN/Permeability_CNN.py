@@ -29,20 +29,23 @@ if not os.path.exists(csv_directory):
 data_csv = []
 data_images = []
 all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
-for file in all_csv:
-    packing_fraction = re.search(r'\d\.\d+', file).group()
-    # shape = re.search(r'circle|ellipse|rectangle|triangle', file).group()
-    shape = re.search(r'circle', file).group()
-    df = pd.read_csv(file)
-    df['Packing_Fraction'] = packing_fraction
-    df['Shape'] = shape
-    df['Model'] = df.index + 1  # Model number is one higher than the index of the dataframe
-    data_csv.append(df)
 
-    # Extract permeability values from data_csv
-    permeability_values = []
-    for df in data_csv:
-        permeability_values.extend(df['Permeability'].values)
+for file in all_csv:
+    if 'circle' in file:
+        df = pd.read_csv(file)
+        packing_fraction = re.search(r'\d.\d+', file).group()
+        shape = re.search(r'circle|ellipse|trinagle|rectangle', file).group()
+        df['Packing_Fraction'] = packing_fraction
+        df['Shape'] = shape
+        df['Model'] = df.index + 1  # Model number is one higher than the index of the dataframe
+        data_csv.append(df)
+
+# Extract permeability values from data_csv
+permeability_values = []
+for df in data_csv:
+    permeability_values.extend(df['Permeability'].values)
+
+print(len(permeability_values))
 
 permeability_values = np.array(permeability_values)
 # Scale the permeability values using mean and variance
@@ -211,11 +214,17 @@ torch.set_default_dtype(torch.float64)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
 # Initialize the dataset objects
-train_images, test_images, train_permeability, test_permeability = train_test_split(
+train_images, dummy_images, train_permeability, dummy_permeability = train_test_split(
     data_images, permeability_values, test_size=0.30, random_state=42)
+
+test_images, val_images, test_permeability, val_permeability = train_test_split(
+    dummy_images, dummy_permeability, test_size=0.50, random_state=42)
+
+
 
 dataset_train = PermeabilityDataset(X=train_images, y=train_permeability)
 dataset_test = PermeabilityDataset(X=test_images, y=test_permeability)
+dataset_val = PermeabilityDataset(X=val_images, y=val_permeability)
 
 # Initialize the dataloader using batch size hyperparameter
 batch_size = 32
@@ -232,14 +241,14 @@ cnn.to(my_device)
 # Define the loss function and optimizer
 ## Neg-log-likelihood loss for classification task
 loss_function = nn.MSELoss()
-optimizer = torch.optim.Adam(cnn.parameters(), lr=1e-3)
+optimizer = torch.optim.Adam(cnn.parameters(), lr=1e-4)
 
 # Log loss and accuracy per epoch
 loss_per_epoch = []
 R_squared_per_epoch = []
 
 # Number of epochs to train
-n_epochs = 15
+n_epochs = 30
 
 # Run the training loop
 for epoch in range(0, n_epochs): # n_epochs at maximum
