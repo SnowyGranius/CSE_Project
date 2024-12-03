@@ -56,14 +56,14 @@ permeability_values = (permeability_values - mean_permeability) / std_permeabili
 # Read images from the folder
 # Full_Images
 # Top_Left_Scales_Images
-image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Circle_Images')
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Full_Images')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
 all_images = glob.glob(os.path.join(image_directory, "*.png"))
 # print(all_images)
 for image_file in all_images:
-    match = re.search(r'pf_(\d\.\d+)_(circle|ellipse|rectangle|triangle)_Model_(\d+)\.png', image_file)
+    match = re.search(r'pf_(\d\.\d+)_(circle)_Model_(\d+)\.png', image_file)
     if match:
         packing_fraction = float(match.group(1))
         shape = match.group(2)
