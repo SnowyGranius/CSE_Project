@@ -18,7 +18,7 @@ from scipy.stats import zscore
 # NLLLoss function expects float64 dtype
 torch.set_default_dtype(torch.float64)
 
-my_device = torch.device('cuda')
+my_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 csv_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Porespy_homogenous_diamater')
 # csv_directory = 'C:\\Users\\ionst\\Documents\\GitHub\\Porespy_homogenous_diamater'
@@ -31,7 +31,8 @@ data_images = []
 all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
 for file in all_csv:
     packing_fraction = re.search(r'\d\.\d+', file).group()
-    shape = re.search(r'circle|ellipse|rectangle|triangle', file).group()
+    # shape = re.search(r'circle|ellipse|rectangle|triangle', file).group()
+    shape = re.search(r'circle', file).group()
     df = pd.read_csv(file)
     df['Packing_Fraction'] = packing_fraction
     df['Shape'] = shape
@@ -49,13 +50,12 @@ mean_permeability = np.mean(permeability_values)
 std_permeability = np.std(permeability_values)
 permeability_values = (permeability_values - mean_permeability) / std_permeability
 
-    # Find the index of specific permeability values
-value1 = 3.15602165
-value2 = 2.58321055
+# value1 = 3.15602165
+# value2 = 2.58321055
 
 # Read images from the folder
-# Circle_Images
-# quarter_scaled_images
+# Full_Images
+# Top_Left_Scales_Images
 image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Circle_Images')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
@@ -190,7 +190,6 @@ class PermeabilityCNN(nn.Module):
             nn.Flatten(),
             ############## MLP LAYERS #############
             nn.Linear(4608, 1), # 4608, 18432, 51200,
-
         )
         
     def forward(self, x):
@@ -314,10 +313,10 @@ axs[0].set_xlabel('Epoch')
 axs[0].set_ylabel('Neg-log-likelihood Loss')
 axs[0].legend()
 # Plot accuracy per epoch
-axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training accuracy', marker='x')
+axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training R squared', marker='x')
 axs[1].grid(True)
 axs[1].set_xlabel('Epoch')
-axs[1].set_ylabel('Accuracy')
+axs[1].set_ylabel('R squared')
 axs[1].legend()
 plt.suptitle('Loss and accuracy curves during training', y=0.92)
 plt.show()
@@ -330,7 +329,8 @@ with torch.no_grad():
     outputs = cnn(test_inputs)
 
 test_predictions = outputs.cpu().numpy()
-test_targets = np.array(dataset_test.y)
+test_predictions = test_predictions * std_permeability + mean_permeability
+test_targets = np.array(dataset_test.y) * std_permeability + mean_permeability
 # Identify outliers in the dataset
 
 # Calculate z-scores of the test targets
