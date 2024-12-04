@@ -23,7 +23,7 @@ for p in np.linspace(0.55, 0.95, 10):
         new_folder_path = os.path.join(path, new_folder)
         os.makedirs(new_folder_path, exist_ok=True)
         # Generate the original image
-        im = ps.generators.blobs(shape=[resolution, resolution], porosity=p, blobiness=b, seed=10)
+        im = ps.generators.blobs(shape=[resolution, resolution], porosity=p, blobiness=b, seed=np.random.randint(0, 40000))
         im_inv = np.invert(im)
 
         #-------------------Calculate the M0, M1, and M2 for the original image-------------------
