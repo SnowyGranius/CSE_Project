@@ -107,6 +107,14 @@ def ARDRegression_model(X_train, y_train, X_test, y_test):
     mse = mean_squared_error(y_test, y_pred)
     print(f'ARDRegression MSE: {mse}')
     print(f'Coefficients: {model.coef_}')
+    
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(model.coef_)), model.coef_.flatten())
+    plt.xlabel('Feature Index')
+    plt.ylabel('Weight')
+    plt.title('ARDRegression Model Weights')
+    plt.show()
+    
     return model
 
 
@@ -161,5 +169,5 @@ else:
     best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
     print(best_models)
         
-    Bianca = ARDRegression_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
-    print(Bianca)
+    ADR_results = ARDRegression_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+    print(ADR_results)
