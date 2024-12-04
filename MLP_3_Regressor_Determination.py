@@ -22,7 +22,7 @@ from matplotlib.ticker import FormatStrFormatter, ScalarFormatter
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet, ARDRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, GradientBoostingRegressor, ExtraTreesRegressor
@@ -58,12 +58,12 @@ def automatic_process_regression(X_train, y_train, X_test, y_test):
             'gamma': ['scale', 'auto']
         },
         'DecisionTreeRegressor': {
-            'criterion': ['mse', 'friedman_mse', 'mae'],
+            'criterion': ['squared_error', 'friedman_mse', 'absolute_error'],
             'splitter': ['best', 'random'],
             'max_depth': [5, 10, 20, 30],
             'min_samples_split': [2, 5, 10],
             'min_samples_leaf': [1, 2, 4],
-            'max_features': [None, 'auto', 'sqrt', 'log2']
+            'max_features': [None, 'sqrt', 'log2']
         },
         'KNeighborsRegressor': {
             'n_neighbors': [3, 5, 7, 9]
@@ -109,6 +109,14 @@ def automatic_process_regression(X_train, y_train, X_test, y_test):
     return best_models
 
 
+def ARDRegression_model(X_train, y_train, X_test, y_test):
+    model = ARDRegression()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    print(f'ARDRegression MSE: {mse}')
+    return model
+
 
 #pathlist = ['Eddie/Porespy_homogenous_diameter', 'Eddie/Heterogenous_samples', 'Eddie/Threshold_homogenous_diameter_small_RCP', 'Eddie/Threshold_homogenous_diameter_wide_RCP']
 pathlist = ['Eddie/Porespy_homogenous_diameter']
@@ -131,5 +139,9 @@ for path in pathlist:
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
 
-    Bianca = automatic_process_regression(X_train, y_train, X_test, y_test)
+    best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+    print(best_models)
+    
+    Bianca = ARDRegression_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
     print(Bianca)
+    
