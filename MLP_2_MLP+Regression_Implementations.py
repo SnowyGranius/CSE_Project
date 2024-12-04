@@ -492,14 +492,14 @@ for path in pathlist:
     
     #GAM_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
 
-    #decision_tree(X_train, y_train, X_test, y_test)
+    decision_tree(X_train, y_train, X_test, y_test)
 
     #SR_sindy_prediciton(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
 
     #symbolic_regressor_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
     
-    best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
-    print(best_models)
+    #best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+    #print(best_models)
 
     # ellipse_exists = False
 
