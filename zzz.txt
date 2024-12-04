@@ -1,0 +1,7 @@
+{'LinearRegression': LinearRegression(), 'RandomForestRegressor': RandomForestRegressor(max_depth=20, n_estimators=10), 'SVR': SVR(C=0.1), 'DecisionTreeRegressor': DecisionTreeRegressor(criterion='friedman_mse', max_depth=30, min_samples_split=5, splitter='random'), 'KNeighborsRegressor': KNeighborsRegressor(n_neighbors=3), 'GradientBoostingRegressor': GradientBoostingRegressor(n_estimators=200), 'AdaBoostRegressor': AdaBoostRegressor(learning_rate=0.01, n_estimators=200), 'ExtraTreesRegressor': ExtraTreesRegressor(max_depth=20, n_estimators=50), 'Ridge': Ridge(alpha=10), 'Lasso': Lasso(alpha=0.1), 'ElasticNet': ElasticNet(alpha=0.1, l1_ratio=0.1)}
+
+{'LinearRegression': LinearRegression(), 'RandomForestRegressor': RandomForestRegressor(n_estimators=10), 'SVR': SVR(C=10), 'DecisionTreeRegressor': DecisionTreeRegressor(criterion='friedman_mse', max_depth=30, splitter='random'), 'KNeighborsRegressor': KNeighborsRegressor(n_neighbors=3), 'GradientBoostingRegressor': GradientBoostingRegressor(n_estimators=200), 'AdaBoostRegressor': AdaBoostRegressor(learning_rate=0.2, n_estimators=100), 'ExtraTreesRegressor': ExtraTreesRegressor(max_depth=10), 'Ridge': Ridge(alpha=1), 'Lasso': Lasso(alpha=0.1), 'ElasticNet': ElasticNet(alpha=0.1, l1_ratio=0.1)}
+
+
+
+Dc sunt diferite coa? Bianca aju-tama
