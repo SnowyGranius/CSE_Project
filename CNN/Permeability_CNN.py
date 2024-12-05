@@ -209,7 +209,7 @@ def count_parameters(model):
 torch.manual_seed(42)
 
 torch.set_default_dtype(torch.float32)
-summary(PermeabilityCNN().to('cuda'), input_size=(1, 1000, 1000))
+summary(PermeabilityCNN().to('cuda'), input_size=(1, 2000, 2000))
 torch.set_default_dtype(torch.float64)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
@@ -241,7 +241,7 @@ cnn.to(my_device)
 # Define the loss function and optimizer
 ## Neg-log-likelihood loss for classification task
 loss_function = nn.MSELoss()
-optimizer = torch.optim.Adam(cnn.parameters(), lr=1e-4)
+optimizer = torch.optim.Adam(cnn.parameters(), lr=3e-4)
 
 # Log loss and accuracy per epoch
 loss_per_epoch = []
@@ -319,15 +319,16 @@ fig, axs = plt.subplots(2,1,figsize=(8,8))
 axs[0].plot(np.arange(1,len(loss_per_epoch)+1), loss_per_epoch, color='blue', label='Training loss', marker='.')
 axs[0].grid(True)
 axs[0].set_xlabel('Epoch')
-axs[0].set_ylabel('Neg-log-likelihood Loss')
-axs[0].legend()
+axs[0].set_ylabel('Loss')
+axs[0].legend() 
 # Plot accuracy per epoch
 axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training R squared', marker='x')
 axs[1].grid(True)
 axs[1].set_xlabel('Epoch')
 axs[1].set_ylabel('R squared')
 axs[1].legend()
-plt.suptitle('Loss and accuracy curves during training', y=0.92)
+plt.suptitle('Loss and R squared curves during training', y=0.92)
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared.png'))
 plt.show()
 
 # Evaluate model
@@ -368,4 +369,5 @@ ax.set_title('Ground Truth vs Predicted Values')
 ax.legend()
 # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
 ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch-1]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted.png'))
 plt.show()
