@@ -6,11 +6,11 @@ from skimage.measure import euler_number
 import os
 import pandas as pd
 
-for i in range(100, 1000, 100):
+for i in range(800, 900, 100):
     #for k in np.arange(0.6, 0.8, 0.1):
         # 1 = pore space, 0 = solid space
         np.random.seed(10)
-        im = ps.generators.blobs(shape = [i, i], porosity = 0.5, blobiness = 2)
+        im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10)
         profile=ps.metrics.representative_elementary_volume(im=im)
         # Calculate MFs
         # M0
