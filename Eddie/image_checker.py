@@ -23,7 +23,7 @@ path=os.path.join(base_path, sub_path, 'blobiness_10_porosity_0.55')
 file_to_read='subimage_0_0.dat'
 file_path=os.path.join(path, file_to_read)
 lines = read_dat_file(file_path)
-image = reconstruct_image(lines)
+sub_image = reconstruct_image(lines)
 
-plt.imshow(image, cmap='gray')
+plt.imshow(sub_image, cmap='gray')
 plt.show()
