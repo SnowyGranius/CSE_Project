@@ -19,11 +19,12 @@ path=os.path.join(base_path, sub_path)
 
 for p in np.linspace(0.55, 0.95, 10):
     for b in np.linspace(10, 14, 5):
-        new_folder = f'blobiness_{b}_porosity_{p}'
+        seed=np.random.randint(0, 40000)
+        new_folder = f'blobiness_{b}_porosity_{p}_{seed}'
         new_folder_path = os.path.join(path, new_folder)
         os.makedirs(new_folder_path, exist_ok=True)
         # Generate the original image
-        im = ps.generators.blobs(shape=[resolution, resolution], porosity=p, blobiness=b, seed=np.random.randint(0, 40000))
+        im = ps.generators.blobs(shape=[resolution, resolution], porosity=p, blobiness=b, seed=seed)
         im_inv = np.invert(im)
 
         #-------------------Calculate the M0, M1, and M2 for the original image-------------------
@@ -47,7 +48,7 @@ for p in np.linspace(0.55, 0.95, 10):
                 #subimages.append(sub)
         # Calculate the M0, M1, and M2 for each subimage
                 M0=ps.metrics.porosity(sub)
-                M1=perimeter_crofton(sub, 4)
+                M1=perimeter_crofton(sub, 4)/subimage_size
                 M2=euler_number(np.invert(sub), connectivity = 1)
                 M0_list.append(M0)
                 M1_list.append(M1)

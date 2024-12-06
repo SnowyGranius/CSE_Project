@@ -9,33 +9,45 @@ import pandas as pd
 for i in range(800, 900, 100):
     #for k in np.arange(0.6, 0.8, 0.1):
         # 1 = pore space, 0 = solid space
-        np.random.seed(10)
-        im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10)
-        profile=ps.metrics.representative_elementary_volume(im=im)
+        # np.random.seed(10)
+
+        #im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10, seed=14341)
+        script_dir = os.path.dirname(__file__)
+        image_path = os.path.join(script_dir, 'pf_0.100_circle_Model_1.png')
+        im = plt.imread(image_path)
+        im = im[:, :, 0]
+        im = np.invert(im.astype(bool))
+        plt.imshow(im)
+        plt.show()
+
+
+        #profile=ps.metrics.representative_elementary_volume(im=im)
         # Calculate MFs
         # M0
         M0 = ps.metrics.porosity(im)
-        #print('M0 = {}'.format(M0))
+        print('M0 = {}'.format(M0))
 
         #M1
         mesh = ps.tools.mesh_region(region = im)
-        M1 = ps.metrics.mesh_surface_area(mesh = mesh)
+        #M1 = ps.metrics.mesh_surface_area(mesh = mesh)
         #print('M1 = {}'.format(M1))
 
-        per4 = perimeter(im, 4)
-        per8 = perimeter(im, 8)
-        per_c2 = perimeter_crofton(im, 2)
+        #per4 = perimeter(im, 4)
+        #per8 = perimeter(im, 8)
+        #per_c2 = perimeter_crofton(im, 2)
         per_c4 = perimeter_crofton(im, 4)
 
-        # print('Perimeter, 4 connectivity = {}'.format(per4))
-        # print('Perimeter, 8 connectivity = {}'.format(per8))
+        #print('Perimeter, 4 connectivity = {}'.format(per4))
+        #print('Perimeter, 8 connectivity = {}'.format(per8))
         # print('Crofton Perimeter, 2 connectivity = {}'.format(per_c2))
-        # print('Crofton Perimeter, 4 connectivity = {}'.format(per_c4))
+        print('Crofton Perimeter, 4 connectivity = {}'.format(per_c4))
 
         im_inv = np.invert(im)
         M2 = euler_number(im_inv, connectivity = 1)
 
-        #print('M2 = {}'.format(M2))\
+
+
+        print('M2 = {}'.format(M2))
         '''
         script_dir = os.path.dirname(__file__)
         base_path=script_dir
