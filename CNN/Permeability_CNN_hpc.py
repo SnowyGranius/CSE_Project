@@ -1,19 +1,17 @@
-import torch
+import matplotlib.pyplot as plt
 import random
 import numpy as np
-import matplotlib.pyplot as plt
-from torch import nn
-import torch.nn.functional as F
-from sklearn.metrics import accuracy_score
 import os
 import sys
 import pandas as pd
 import glob
 import re
 from sklearn.model_selection import train_test_split
-from torchsummary import summary
 from scipy.stats import zscore
-from classes_cnn import BasicCNN, MLPCNN, EvenCNN, EvenCNN2000
+import torch
+from torch import nn
+import torch.nn.functional as F
+#from torchsummary import summary
 import time
 
 
@@ -21,6 +19,7 @@ import time
 torch.set_default_dtype(torch.float64)
 
 my_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(my_device)
 
 csv_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Porespy_homogenous_diamater')
 # csv_directory = 'C:\\Users\\ionst\\Documents\\GitHub\\Porespy_homogenous_diamater'
@@ -50,12 +49,18 @@ for df in data_csv:
 print(len(permeability_values))
 
 permeability_values = np.array(permeability_values)
+# Scale the permeability values using mean and variance
+mean_permeability = np.mean(permeability_values)
+std_permeability = np.std(permeability_values)
+permeability_values = (permeability_values - mean_permeability) / std_permeability
+
+# value1 = 3.15602165
+# value2 = 2.58321055
 
 # Read images from the folder
 # Full_Images
 # Top_Left_Scales_Images
-# Full_Images_Double
-image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Full_Images')
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Full_Images_Double')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
@@ -106,6 +111,96 @@ class PermeabilityDataset(torch.utils.data.Dataset):
         return self.X[i], self.y[i]
 
 
+class PermeabilityCNN_COPY(nn.Module):
+    def __init__(self):
+        super(PermeabilityCNN_COPY, self).__init__()
+
+        # Convolutional layers
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.conv6 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+
+        # pooling has no learnable parameters, so we can just use one
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # MLP classifier
+        self.fc = nn.Linear(28800, 1)
+
+    def forward(self, x):
+        # print("Input size:", x.size())
+        x = self.pool(F.relu(self.conv1(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv2(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv3(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv4(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv5(x)))
+        # print("Layer size:", x.size())
+        x = self.pool(F.relu(self.conv6(x)))
+        # print("Layer size:", x.size())
+        x = x.view(-1, 28800)  # Flatten the tensor
+        # print("Layer size:", x.size())
+
+        # Fully connected layer for classification
+        x = self.fc(x)
+
+        return x
+
+class PermeabilityCNN(nn.Module):
+    """
+    CNN model for classification task on MNIST dataset
+    """
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.Sequential(
+            ############## CONV LAYERS #############
+            # Conv2d: https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+            # Input image has dimensions: [N, C, H, W]
+            # 2D convolution layers are defined using the following hyperparameters
+
+            nn.MaxPool2d(kernel_size=5, stride=5),
+
+            nn.Conv2d(
+                in_channels = 1,
+                out_channels = 32,
+                kernel_size = 3,
+                stride = 1,
+                padding = 1
+            ), 
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Flatten(),
+            ############## MLP LAYERS #############
+            nn.Linear(18432, 1), # 4608, 18432, 51200,
+        )
+        
+    def forward(self, x):
+        '''
+        Forward pass
+        '''
+        return self.layers(x)
 
 # Helper function to count number of learnable parameters in neural network
 def count_parameters(model):
@@ -115,7 +210,7 @@ def count_parameters(model):
 torch.manual_seed(42)
 
 torch.set_default_dtype(torch.float32)
-summary(EvenCNN().to('cuda'), input_size=(1, 1000, 1000))
+#summary(PermeabilityCNN().to(my_device), input_size=(1, 2000, 2000))
 torch.set_default_dtype(torch.float64)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
@@ -126,12 +221,7 @@ train_images, dummy_images, train_permeability, dummy_permeability = train_test_
 test_images, val_images, test_permeability, val_permeability = train_test_split(
     dummy_images, dummy_permeability, test_size=0.50, random_state=42)
 
-# normalize the training permeability
-mean_permeability = np.mean(train_permeability)
-std_permeability = np.std(train_permeability)
-train_permeability = (train_permeability - mean_permeability) / std_permeability
-test_permeability = (test_permeability - mean_permeability) / std_permeability
-val_permeability = (val_permeability - mean_permeability) / std_permeability
+
 
 dataset_train = PermeabilityDataset(X=train_images, y=train_permeability)
 dataset_test = PermeabilityDataset(X=test_images, y=test_permeability)
@@ -139,10 +229,11 @@ dataset_val = PermeabilityDataset(X=val_images, y=val_permeability)
 
 # Initialize the dataloader using batch size hyperparameter
 batch_size = 32
-trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
+trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
 # Initialize the CNN
-cnn = EvenCNN()
+cnn = PermeabilityCNN()
+cnn_copy = PermeabilityCNN_COPY()
 # print(cnn)
 # print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
 # Transfer model to your chosen device
@@ -158,10 +249,10 @@ loss_per_epoch = []
 R_squared_per_epoch = []
 
 # Number of epochs to train
-n_epochs = 50
+n_epochs = 30
 
-start_time = time.time()
 # Run the training loop
+start_time = time.time()
 for epoch in range(0, n_epochs): # n_epochs at maximum
 
     # Print epoch
@@ -213,14 +304,15 @@ for epoch in range(0, n_epochs): # n_epochs at maximum
     
     # Log accuracy value per epoch
     R_squared_per_epoch.append(np.mean(R_squared_per_batch))
+    # torch.save(cnn.state_dict(), 'best_model.pth')
     print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
     
     
 # Process is complete.
 print('Training process has finished.')
-
 end_time = time.time()
-print(f'Training time: {end_time - start_time} seconds')
+
+print('Training time: ', end_time-start_time, ' seconds')
 
 #scale back the permeability values
 train_permeability = train_permeability * std_permeability + mean_permeability
@@ -241,7 +333,7 @@ axs[1].set_xlabel('Epoch')
 axs[1].set_ylabel('R squared')
 axs[1].legend()
 plt.suptitle('Loss and R squared curves during training', y=0.92)
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-EvenCNN.png'))
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared.png'))
 plt.show()
 
 # Evaluate model
@@ -254,6 +346,22 @@ with torch.no_grad():
 test_predictions = outputs.cpu().numpy()
 test_predictions = test_predictions * std_permeability + mean_permeability
 test_targets = np.array(dataset_test.y) * std_permeability + mean_permeability
+# Identify outliers in the dataset
+
+# Calculate z-scores of the test targets
+z_scores = zscore(test_targets)
+
+# Define a threshold for identifying outliers
+threshold = 2
+
+# Identify outliers
+outliers = np.where(np.abs(z_scores) > threshold)[0]
+
+print(f'Number of outliers: {len(outliers)}')
+print(f'Outliers indices: {outliers}')
+print(f'Outliers values: {test_targets[outliers]}')
+
+
 
 
 # Visualize the ground truth on x axis and predicted values on y axis
@@ -265,6 +373,6 @@ ax.set_ylabel('Predicted')
 ax.set_title('Ground Truth vs Predicted Values')
 ax.legend()
 # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
-ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch-1]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-EvenCNN.png'))
+ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted.png'))
 plt.show()
