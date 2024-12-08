@@ -1,40 +1,65 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-import tensorflow as tf
-import gpflow
 import os
 import glob
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, Matern, ConstantKernel as C
+from sklearn.gaussian_process.kernels import RBF, Matern, RationalQuadratic, ConstantKernel as C
 import torch
 
-print(tf.__version__)
+seed = 1
+torch.manual_seed(seed)
+np.random.seed(seed)
 
+def plot_preds(mu_pred, X_train, X_test, y_train, posterior_samples, domain, confidence_upper, confidence_lower):
+    """
+    Plot GP predictions with confidence intervals and posterior samples.
+    
+    Parameters:
+    - mu_pred: Mean predictions from the GP.
+    - X_train: Training data (in original scale).
+    - X_test: Test data (in original scale).
+    - y_train: Training labels (in original scale).
+    - posterior_samples: Samples from the posterior distribution.
+    - domain: Range of x values for plotting.
+    - confidence_upper: Upper bound of confidence intervals.
+    - confidence_lower: Lower bound of confidence intervals.
+    """
 
-np.random.seed(42)
+    fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(8, 6))
 
-def f_truth(x):
-    # Return a sine
-    #return torch.sin(2 * x)
-    ## Use the following slightly more complex function when comparing between the predictions made with different kernels
-    return 2*torch.sin(2*x) + torch.exp(x/5)
+    # Plot the distribution of the function (mean, covariance)
+    ax1.plot(X_test, mu_pred, "C0-", label="GP Mean")
+    ax1.fill_between(X_test.flatten(), confidence_lower, confidence_upper, color="C0", alpha=0.2, label="95% CI")
+    ax1.scatter(X_train, y_train, color="red", label="Training Points")
+    ax1.set_xlabel("$x$", fontsize=13)
+    ax1.set_ylabel("$y$", fontsize=13)
+    ax1.set_title("GP Predictions with 95% Confidence Interval")
+    ax1.legend()
+    ax1.grid()
 
-
-# The data is generated from the ground truth with i.i.d. gaussian noise
-def f_data(x, rng, epsilon=0.2):
-    # Generate N noisy observations (1 at each location)
-    t = f_truth(x) + torch.normal(mean=0, std=epsilon, size=x.shape, generator=rng)
-
-    return t
+     # Posterior samples
+    for sample in posterior_samples:
+        ax2.plot(X_test, sample, alpha=0.6)
+    ax2.set_xlabel("$x$", fontsize=13)
+    ax2.set_ylabel("$y$", fontsize=13)
+    ax2.set_title("Posterior Samples")
+    ax2.grid()
+    plt.tight_layout()
+    plt.savefig('GP_Confidence_Interval')
+    plt.show()
+    
+# Evaluate different combinations of hyperparameters
+best_mse = float('inf')
+best_params = {}
 
 pathlist = ['Datasets/Porespy_homogeneous_diameter']
 #, 'Datasets/Heterogeneous_samples', 'Datasets/Threshold_homogenous_diamater_small_RCP', 'Datasets/Threshold_homogenous_diamater_wide_RCP']
 
-
+    
 for path in pathlist:
     all_files = glob.glob(os.path.join(path, '*.csv'))
     df_from_each_file = (pd.read_csv(f, dtype=np.float64) for f in all_files)
@@ -49,47 +74,57 @@ for path in pathlist:
     y_scaled = scaler_y.fit_transform(y)
     
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=1234)
-    
+            
     #RBF kernel
-    K = C(1.0, (1e-3, 1e3)) * RBF(length_scale=10.0, length_scale_bounds=(1e-2, 1e2)) 
+    K = C(1.0) * RBF(length_scale=1.0) 
     
     #Matern kernel
     K_matern = C(1.0) * Matern(length_scale=10.0, nu=1.5) 
     
-    gp = GaussianProcessRegressor(kernel=K_matern, alpha=1e-10, n_restarts_optimizer=10, normalize_y=True)
-    gp.fit(X_train, y_train.ravel())  
+    #Radial quadratic kernel
+    K_rq = C(1.0) * RationalQuadratic(length_scale=10.0, alpha=1.5)
+    
+    gp = GaussianProcessRegressor(kernel=K, alpha=0.01, n_restarts_optimizer=20, normalize_y=True)
+    gp.fit(X_train, y_train)  
     
     y_pred, sigma = gp.predict(X_test, return_std=True)
-    sigma_inv = sigma * scaler_y.scale_  # Scale the uncertainty back
-
+    mu_pred = scaler_y.inverse_transform(y_pred.reshape(-1, 1)).flatten()
+    sigma_scaled = sigma * scaler_y.scale_
+    confidence_upper = mu_pred + 1.96 * sigma_scaled
+    confidence_lower = mu_pred - 1.96 * sigma_scaled
+    
     y_test_inv = scaler_y.inverse_transform(y_test.reshape(-1, 1)).flatten()
-    y_pred_inv = scaler_y.inverse_transform(y_pred.reshape(-1, 1)).flatten()
+    X_train_inv = scaler_X.inverse_transform(X_train)
+    X_test_inv = scaler_X.inverse_transform(X_test)
+    y_train_inv = scaler_y.inverse_transform(y_train).flatten()
+
 
     # Evaluate model
-    mse = mean_squared_error(y_test_inv, y_pred_inv)
-    r2 = r2_score(y_test_inv, y_pred_inv)
-    print(f"Mean Squared Error: {mse:.5f}")
+    mse = mean_squared_error(y_test_inv, mu_pred)
+    r2 = r2_score(y_test_inv, mu_pred)
+    print(f"Mean Squared Error: {mse:.12f}")
     print(f"R² Score: {r2:.5f}")
-
-    num_draws = 100  # Number of samples to draw from the posterior distribution
-    posterior_samples = np.random.multivariate_normal(y_pred_inv, np.diag(sigma_inv ** 2), size=num_draws)
-    plt.figure(figsize=(12, 6))
-    for i in range(num_draws):
-        plt.plot(X_test, posterior_samples[i], color='gray', alpha=0.2, label='Sample' if i == 0 else "")
     
-    # Plot the mean prediction with the confidence interval
-    plt.plot(X_test, y_pred_inv, color='blue', linewidth=3, label="Mean prediction")
-    plt.fill_between(X_test.flatten(),
-                     y_pred_inv - 1.96 * sigma_inv,
-                     y_pred_inv + 1.96 * sigma_inv,
-                     color='blue', alpha=0.3, label="95% Confidence Interval")
+    plt.figure(figsize=(10, 7))
 
-    plt.xlabel('Scaled Porosity (Input Feature)')
+    plt.scatter(y_test_inv, mu_pred, alpha=0.6, color='b', label=f'R²: {r2:.5f}\nMSE (scaled data): {mse:.5f}')
+    plt.plot([min(y_test_inv), max(y_test_inv)],
+             [min(y_test_inv), max(y_test_inv)], color='r', linestyle='--', label='Parity Line')
+
+    plt.title('Parity Plot '+ os.path.basename(path)+ ' Gaussian Process Prediciton Based on $M_0$, $M_1$ and $M_2$')
+
+    plt.xlabel('True Permeability')
     plt.ylabel('Predicted Permeability')
-    plt.title('Posterior Distribution of Gaussian Process Regression Predictions')
     plt.legend()
-    plt.grid()
+    plt.grid(True)
+    plt.axis('equal')
+    
+    plt.savefig('Parity_GP', dpi=300)
     plt.show()
+    
+    posterior_samples = gp.sample_y(X_test, n_samples=12).T
+    posterior_samples_inv = scaler_y.inverse_transform(posterior_samples)
 
-
-
+    # Plot predictions
+    domain = [X_test_inv.min(), X_test_inv.max()]
+    plot_preds(mu_pred, X_train_inv, X_test_inv, y_train_inv, posterior_samples_inv, domain, confidence_upper, confidence_lower)
