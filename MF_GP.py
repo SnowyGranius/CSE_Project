@@ -56,7 +56,7 @@ def plot_preds(mu_pred, X_train, X_test, y_train, posterior_samples, domain, con
 best_mse = float('inf')
 best_params = {}
 
-pathlist = ['Datasets/Porespy_homogeneous_diameter']
+pathlist = ['Eddie/Porespy_homogenous_diameter']
 #, 'Datasets/Heterogeneous_samples', 'Datasets/Threshold_homogenous_diamater_small_RCP', 'Datasets/Threshold_homogenous_diamater_wide_RCP']
 
     
