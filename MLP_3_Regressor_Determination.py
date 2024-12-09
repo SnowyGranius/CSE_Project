@@ -213,7 +213,7 @@ def ARDRegression_model_optimized(X_train, y_train, X_test, y_test):
 pathlist = ['Eddie/Porespy_homogenous_diameter', 'Eddie/Heterogenous_samples', 'Eddie/Threshold_homogenous_diameter_small_RCP', 'Eddie/Threshold_homogenous_diameter_wide_RCP']
 #pathlist = ['Eddie/Porespy_homogenous_diameter']
 
-use_all = True
+use_all = False
 
 if use_all is False:
     for path in pathlist:
