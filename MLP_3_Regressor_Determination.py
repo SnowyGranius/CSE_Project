@@ -108,20 +108,112 @@ def ARDRegression_model(X_train, y_train, X_test, y_test):
     print(f'ARDRegression MSE: {mse}')
     print(f'Coefficients: {model.coef_}')
     
+    """
     plt.figure(figsize=(10, 6))
     plt.bar(range(len(model.coef_)), model.coef_.flatten())
     plt.xlabel('Feature Index')
     plt.ylabel('Weight')
     plt.title('ARDRegression Model Weights')
     plt.show()
+    """
+    
+    # Plot the true weights, the estimated weights, the histogram of the
+    # weights, and predictions with standard deviations
+    plt.figure(figsize=(6, 5))
+    plt.title("Weights of the model")
+    plt.plot(model.coef_, color="darkblue", linestyle="-", linewidth=2, label="ARD estimate")
+    
+    plt.xlabel("Features")
+    plt.ylabel("Values of the weights")
+    plt.legend(loc=1)
+
+    """
+    n_features = X_train.shape[1]
+
+    plt.figure(figsize=(6, 5))
+    plt.title("Histogram of the weights")
+    plt.hist(model.coef_, bins=n_features, color="navy", log=True)
+    plt.scatter(
+        model.coef_[relevant_features],
+        np.full(len(relevant_features), 5.0),
+        color="gold",
+        marker="o",
+        label="Relevant features",
+    )
+    plt.ylabel("Features")
+    plt.xlabel("Values of the weights")
+    plt.legend(loc=1)
+    """
+
+    plt.figure(figsize=(6, 5))
+    plt.title("Marginal log-likelihood")
+    plt.plot(model.scores_, color="navy", linewidth=2)
+    plt.ylabel("Score")
+    plt.xlabel("Iterations")
+    
+    plt.show()
     
     return model
+
+
+def ARDRegression_model_optimized(X_train, y_train, X_test, y_test):
+    model = ARDRegression()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    print(f'ARDRegression MSE: {mse}')
+    print(f'Coefficients: {model.coef_}')
+    
+    # Plot the weights
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(model.coef_.flatten())), model.coef_.flatten())
+    plt.xlabel('Feature Index')
+    plt.ylabel('Weight')
+    plt.title('ARDRegression Model Weights')
+    plt.show()
+    
+    # Plot the true weights, the estimated weights, the histogram of the weights, and predictions with standard deviations
+    plt.figure(figsize=(6, 5))
+    plt.title("Weights of the model")
+    plt.plot(model.coef_, color="darkblue", linestyle="-", linewidth=2, label="ARD estimate")
+    plt.xlabel("Features")
+    plt.ylabel("Values of the weights")
+    plt.legend(loc=1)
+    plt.show()
+
+    n_features = X_train.shape[1]  # Number of features in the dataset
+
+    """
+    plt.figure(figsize=(6, 5))
+    plt.title("Histogram of the weights")
+    plt.hist(model.coef_, bins=n_features, color="navy", log=True)
+    plt.ylabel("Frequency")
+    plt.xlabel("Values of the weights")
+    plt.show()
+    """
+
+    """
+    # Plot predictions with standard deviations
+    plt.figure(figsize=(6, 5))
+    plt.title("Predictions with standard deviations")
+    yerr = model.sigma_.flatten() if model.sigma_.ndim > 1 else model.sigma_
+    yerr = yerr[:len(y_test.flatten())]  # Ensure yerr matches the length of y_test
+    plt.errorbar(range(len(y_test.flatten())), y_test.flatten(), yerr=yerr, fmt='o', label='True values')
+    plt.errorbar(range(len(y_pred.flatten())), y_pred.flatten(), yerr=yerr, fmt='x', label='Predicted values')
+    plt.xlabel("Sample index")
+    plt.ylabel("Permeability")
+    plt.legend(loc=1)
+    plt.show()
+    """
+    
+    return model
+
 
 
 pathlist = ['Eddie/Porespy_homogenous_diameter', 'Eddie/Heterogenous_samples', 'Eddie/Threshold_homogenous_diameter_small_RCP', 'Eddie/Threshold_homogenous_diameter_wide_RCP']
 #pathlist = ['Eddie/Porespy_homogenous_diameter']
 
-use_all = False
+use_all = True
 
 if use_all is False:
     for path in pathlist:
@@ -145,8 +237,8 @@ if use_all is False:
         #best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
         #print(best_models)
         
-        Bianca = ARDRegression_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
-        print(Bianca)
+        ARD_results = ARDRegression_model_optimized(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+        print(ARD_results)
     
 else:
     for path in pathlist:
@@ -169,5 +261,5 @@ else:
     best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
     print(best_models)
         
-    ADR_results = ARDRegression_model(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
-    print(ADR_results)
+    ARD_results = ARDRegression_model_optimized(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+    print(ARD_results)
