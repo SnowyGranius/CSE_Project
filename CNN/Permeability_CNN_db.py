@@ -10,8 +10,6 @@ import sys
 import glob
 import re
 from sklearn.model_selection import train_test_split
-from torchsummary import summary
-from scipy.stats import zscore
 from classes_cnn import BasicCNN, MLPCNN, EvenCNN, EvenCNN2000
 import time
 
@@ -33,20 +31,20 @@ all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
 
 for file in all_csv:
     if 'circle' in file:
-        #df = pd.read_csv(file)
         with open(file, 'r') as f:
             lines = f.readlines()
-        header = lines[0].strip().split(',')
-        data = [line.strip().split(',') for line in lines[1:]]
-        df = {col: [] for col in header}
-        for row in data:
-            for col, value in zip(header, row):
-                df[col].append(float(value) if col == 'Permeability' else value)
+            headers = lines[0].strip().split(',')
+            print(headers)
+            data = [line.strip().split(',') for line in lines[1:]]
+            df = {header: [] for header in headers}
+            for row in data:
+                for header, value in zip(headers, row):
+                    df[header].append(float(value) if header == 'Permeability' else value)
         packing_fraction = re.search(r'\d.\d+', file).group()
         shape = re.search(r'circle|ellipse|trinagle|rectangle', file).group()
         df['Packing_Fraction'] = packing_fraction
         df['Shape'] = shape
-        df['Model'] = list(range(1, len(df['Permeability'])))  # Model number is one higher than the index
+        df['Model'] = list(range(1, len(df['Permeability'])))  # Model number is one higher than the index of the dataframe
         data_csv.append(df)
 
 # Extract permeability values from data_csv
@@ -54,10 +52,7 @@ permeability_values = []
 for df in data_csv:
     permeability_values.extend(df['Permeability'])
 
-# for df in data_csv:
-#     permeability_values.extend(df['Permeability'].values)
-
-print(len(permeability_values))
+print(f'Number of permeability values: {len(permeability_values)}')
 
 permeability_values = np.array(permeability_values)
 
@@ -89,8 +84,7 @@ for image_file in all_images:
             'Image': image
         })
 
-num_rows = sum(len(df) for df in data_csv)
-print(f'Number of rows in data_csv: {num_rows}')
+print(f'Number of images: {len(data_images)}')
 
 
 class PermeabilityDataset(torch.utils.data.Dataset):
@@ -124,9 +118,6 @@ def count_parameters(model):
 # Set fixed random number seed for reproducibility of random initializations
 torch.manual_seed(42)
 
-torch.set_default_dtype(torch.float32)
-summary(EvenCNN().to('cuda'), input_size=(1, 1000, 1000))
-torch.set_default_dtype(torch.float64)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
 # Initialize the dataset objects
@@ -152,7 +143,7 @@ batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 # Initialize the CNN
-cnn = EvenCNN()
+cnn = MLPCNN()
 # print(cnn)
 # print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
 # Transfer model to your chosen device
@@ -251,7 +242,7 @@ axs[1].set_xlabel('Epoch')
 axs[1].set_ylabel('R squared')
 axs[1].legend()
 plt.suptitle('Loss and R squared curves during training', y=0.92)
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-EvenCNN.png'))
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-MLPCNN.png'))
 plt.show()
 
 # Evaluate model
@@ -276,5 +267,5 @@ ax.set_title('Ground Truth vs Predicted Values')
 ax.legend()
 # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
 ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch-1]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-EvenCNN.png'))
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-MLPCNN.png'))
 plt.show()
