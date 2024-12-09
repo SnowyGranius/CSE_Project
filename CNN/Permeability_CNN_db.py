@@ -7,7 +7,6 @@ import torch.nn.functional as F
 from sklearn.metrics import accuracy_score
 import os
 import sys
-import pandas as pd
 import glob
 import re
 from sklearn.model_selection import train_test_split
@@ -34,18 +33,29 @@ all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
 
 for file in all_csv:
     if 'circle' in file:
-        df = pd.read_csv(file)
+        #df = pd.read_csv(file)
+        with open(file, 'r') as f:
+            lines = f.readlines()
+        header = lines[0].strip().split(',')
+        data = [line.strip().split(',') for line in lines[1:]]
+        df = {col: [] for col in header}
+        for row in data:
+            for col, value in zip(header, row):
+                df[col].append(float(value) if col == 'Permeability' else value)
         packing_fraction = re.search(r'\d.\d+', file).group()
         shape = re.search(r'circle|ellipse|trinagle|rectangle', file).group()
         df['Packing_Fraction'] = packing_fraction
         df['Shape'] = shape
-        df['Model'] = df.index + 1  # Model number is one higher than the index of the dataframe
+        df['Model'] = list(range(1, len(df['Permeability'])))  # Model number is one higher than the index
         data_csv.append(df)
 
 # Extract permeability values from data_csv
 permeability_values = []
 for df in data_csv:
-    permeability_values.extend(df['Permeability'].values)
+    permeability_values.extend(df['Permeability'])
+
+# for df in data_csv:
+#     permeability_values.extend(df['Permeability'].values)
 
 print(len(permeability_values))
 
@@ -142,7 +152,7 @@ batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 # Initialize the CNN
-cnn = MLPCNN()
+cnn = EvenCNN()
 # print(cnn)
 # print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
 # Transfer model to your chosen device
@@ -241,7 +251,7 @@ axs[1].set_xlabel('Epoch')
 axs[1].set_ylabel('R squared')
 axs[1].legend()
 plt.suptitle('Loss and R squared curves during training', y=0.92)
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-MLPCNN.png'))
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-EvenCNN.png'))
 plt.show()
 
 # Evaluate model
@@ -266,5 +276,5 @@ ax.set_title('Ground Truth vs Predicted Values')
 ax.legend()
 # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
 ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch-1]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-MLPCNN.png'))
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-EvenCNN.png'))
 plt.show()

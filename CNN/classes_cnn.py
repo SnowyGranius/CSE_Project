@@ -154,10 +154,16 @@ class EvenCNN2000(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
 
+            nn.Conv2d(256, 256, kernel_size=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
 
             nn.Flatten(),
             ############## MLP LAYERS #############
-            nn.Linear(12800, 1),
+            nn.Linear(16384, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 64),
+            nn.Linear(64, 1)
         )
     def forward(self, x):
         return self.layers(x)

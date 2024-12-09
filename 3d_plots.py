@@ -25,7 +25,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import scipy.optimize as opt
 plt.rcParams["figure.figsize"] = (16, 9)
-VARIANCE=True
+VARIANCE=False
 
 #Set desired SD
 SD=1
@@ -37,7 +37,7 @@ SD=1
 
 ################ READING ALL THE FILES IN THE FOLDER ################
 script_dir = os.path.dirname(__file__)
-sub_path = 'Threshold_homogenous_diamater_small_RCP'
+sub_path = 'Porespy_homogenous_diamater'
 path = os.path.join(script_dir, sub_path)
 variance_path=os.path.join(script_dir, 'Summaries', sub_path)
 # all_files = glob.glob(os.path.join(path, "*0.300*.csv"))
@@ -195,7 +195,7 @@ cbar = plt.colorbar(sc1, ax=ax, label='Permeability')
 ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
 ax.set_zlabel('Euler Mean Volume')
-ax.set_zlim(0, 7000)
+#ax.set_zlim(0, 7000)
 plt.savefig(os.path.join(path, '3d_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
 
@@ -371,7 +371,7 @@ sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_elli
 cbar = plt.colorbar(sc1, ax=ax, label='Euler')
 # ax.plot_surface(x_mesh, y_mesh, z_mesh_poly, color='red', alpha=0.5, edgecolor='w', label='Fitted Polynomial Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
-ax.plot_surface(x_mesh, y_mesh, z_mesh_power, color='green', alpha=0.5, edgecolor='w', label='Fitted Power Law Surface')
+#ax.plot_surface(x_mesh, y_mesh, z_mesh_power, color='green', alpha=0.5, edgecolor='w', label='Fitted Power Law Surface')
 if VARIANCE:
         plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], one_sd_porosity_rectangle, one_sd_surface_rectangle, one_sd_permeability_rectangle, 'blue')
         plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], one_sd_porosity_triangle, one_sd_surface_triangle, one_sd_permeability_triangle, 'red')
