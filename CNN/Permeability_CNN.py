@@ -20,6 +20,8 @@ import time
 # NLLLoss function expects float64 dtype
 torch.set_default_dtype(torch.float64)
 
+validation = False
+
 my_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Using device: {my_device}')
 
@@ -121,22 +123,33 @@ torch.set_default_dtype(torch.float64)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
 # Initialize the dataset objects
-train_images, dummy_images, train_permeability, dummy_permeability = train_test_split(
-    data_images, permeability_values, test_size=0.30, random_state=42)
 
-test_images, val_images, test_permeability, val_permeability = train_test_split(
-    dummy_images, dummy_permeability, test_size=0.50, random_state=42)
+
+
+if validation:
+    train_images, dummy_images, train_permeability, dummy_permeability = train_test_split(
+        data_images, permeability_values, test_size=0.30, random_state=42)
+
+    test_images, val_images, test_permeability, val_permeability = train_test_split(
+        dummy_images, dummy_permeability, test_size=0.50, random_state=42)
+
+else:
+    train_images, test_images, train_permeability, test_permeability = train_test_split(
+        data_images, permeability_values, test_size=0.30, random_state=42)
 
 # normalize the training permeability
 mean_permeability = np.mean(train_permeability)
 std_permeability = np.std(train_permeability)
 train_permeability = (train_permeability - mean_permeability) / std_permeability
 test_permeability = (test_permeability - mean_permeability) / std_permeability
-val_permeability = (val_permeability - mean_permeability) / std_permeability
 
 dataset_train = PermeabilityDataset(X=train_images, y=train_permeability)
 dataset_test = PermeabilityDataset(X=test_images, y=test_permeability)
-dataset_val = PermeabilityDataset(X=val_images, y=val_permeability)
+
+if validation:
+    val_permeability = (val_permeability - mean_permeability) / std_permeability
+    dataset_val = PermeabilityDataset(X=val_images, y=val_permeability)
+
 
 # Initialize the dataloader using batch size hyperparameter
 batch_size = 32
