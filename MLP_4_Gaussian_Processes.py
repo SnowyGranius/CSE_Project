@@ -4,6 +4,7 @@ import pandas as pd
 import os
 import glob
 import torch
+import time as time
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -36,8 +37,8 @@ def plot_preds(mu_pred, X_train, X_test, y_train, posterior_samples, domain, con
     ax1.plot(X_test, mu_pred, "C0-", label="GP Mean")
     ax1.fill_between(X_test.flatten(), confidence_lower, confidence_upper, color="C0", alpha=0.2, label="95% CI")
     ax1.scatter(X_train, y_train, color="red", label="Training Points")
-    ax1.set_xlabel("$x$", fontsize=13)
-    ax1.set_ylabel("$y$", fontsize=13)
+    ax1.set_xlabel("$M_1$", fontsize=13)
+    ax1.set_ylabel("Permeability", fontsize=13)
     ax1.set_title("GP Predictions with 95% Confidence Interval")
     ax1.legend()
     ax1.grid()
@@ -45,8 +46,8 @@ def plot_preds(mu_pred, X_train, X_test, y_train, posterior_samples, domain, con
      # Posterior samples
     for sample in posterior_samples:
         ax2.plot(X_test, sample, alpha=0.6)
-    ax2.set_xlabel("$x$", fontsize=13)
-    ax2.set_ylabel("$y$", fontsize=13)
+    ax2.set_xlabel("$M_1$", fontsize=13)
+    ax2.set_ylabel("Permeability", fontsize=13)
     ax2.set_title("Posterior Samples")
     ax2.grid()
     plt.tight_layout()
@@ -57,7 +58,7 @@ def plot_preds(mu_pred, X_train, X_test, y_train, posterior_samples, domain, con
 best_mse = float('inf')
 best_params = {}
 
-pathlist = ['Eddie/Porespy_homogenous_diamater']
+pathlist = ['Eddie/Porespy_homogenous_diameter']
 #, 'Datasets/Heterogeneous_samples', 'Datasets/Threshold_homogenous_diamater_small_RCP', 'Datasets/Threshold_homogenous_diamater_wide_RCP']
 
     
@@ -85,10 +86,17 @@ for path in pathlist:
     #Radial quadratic kernel
     K_rq = C(1.0) * RationalQuadratic(length_scale=10.0, alpha=1.5)
     
+    start_time = time.time()
+    
     gp = GaussianProcessRegressor(kernel=K, alpha=0.01, n_restarts_optimizer=20, normalize_y=True)
     gp.fit(X_train, y_train)  
     
     y_pred, sigma = gp.predict(X_test, return_std=True)
+    
+    end_time = time.time()
+    
+    print(f"Time duration: {end_time - start_time}")
+    
     mu_pred = scaler_y.inverse_transform(y_pred.reshape(-1, 1)).flatten()
     sigma_scaled = sigma * scaler_y.scale_
     confidence_upper = mu_pred + 1.96 * sigma_scaled
@@ -123,12 +131,21 @@ for path in pathlist:
     plt.savefig('Parity_GP', dpi=300)
     plt.show()
     
-    posterior_samples = gp.sample_y(X_test, n_samples=12).T
+    X_test = np.linspace(np.min(X),np.max(X),2000).reshape(-1,1)
+    X_test_scaled = scaler_X.transform(X_test)
+    
+    y_pred, sigma = gp.predict(X_test_scaled, return_std=True)
+    mu_pred = scaler_y.inverse_transform(y_pred.reshape(-1, 1)).flatten()
+    
+    sigma_scaled = sigma * scaler_y.scale_
+    confidence_upper = mu_pred + 1.96 * sigma_scaled
+    confidence_lower = mu_pred - 1.96 * sigma_scaled
+    
+    posterior_samples = gp.sample_y(X_test_scaled, n_samples=12).T
     posterior_samples_inv = scaler_y.inverse_transform(posterior_samples)
+    
+    domain = [X_test.min(), X_test.max()]
 
     # Plot predictions
     domain = [X_test_inv.min(), X_test_inv.max()]
-    plot_preds(mu_pred, X_train_inv, X_test_inv, y_train_inv, posterior_samples_inv, domain, confidence_upper, confidence_lower)
-    
-    
-    
+    plot_preds(mu_pred, X_train_inv, X_test, y_train_inv, posterior_samples_inv, domain, confidence_upper, confidence_lower)
