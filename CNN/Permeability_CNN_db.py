@@ -14,10 +14,11 @@ from classes_cnn import BasicCNN, MLPCNN, EvenCNN, EvenCNN2000
 import time
 
 
-# NLLLoss function expects float64 dtype
-torch.set_default_dtype(torch.float64)
+# MSELoss function expects float64 dtype
+# torch.set_default_dtype(torch.float64)
 
 my_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f'Using device: {my_device}')
 
 csv_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Porespy_homogenous_diamater')
 # csv_directory = 'C:\\Users\\ionst\\Documents\\GitHub\\Porespy_homogenous_diamater'
@@ -94,14 +95,9 @@ class PermeabilityDataset(torch.utils.data.Dataset):
     def __init__(self, X, y):
         # Precomputed training set statistics for scaling
         if not torch.is_tensor(X) and not torch.is_tensor(y):
-            # Apply scaling if necessary
-            # X is of shape [N, H, W], the CNN expects input [N, Channels, H, W]
-            # The image is greyscale (contains only 1 channel), add a dummy channel dimension
-            X = np.expand_dims(X, axis=1)
-            # Convert to Pytorch tensor objects
+            X = np.expand_dims(X, axis=1).astype(np.float32)
             self.X = torch.tensor(X)
-            self.y = torch.tensor(y)
-
+            self.y = torch.tensor(y.astype(np.float32))
     def __len__(self):
         return len(self.X)
 
@@ -143,11 +139,7 @@ batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 # Initialize the CNN
-cnn = MLPCNN()
-# print(cnn)
-# print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
-# Transfer model to your chosen device
-cnn.to(my_device)
+cnn = MLPCNN().to(my_device)
 
 # Define the loss function and optimizer
 ## Neg-log-likelihood loss for classification task
@@ -242,7 +234,7 @@ axs[1].set_xlabel('Epoch')
 axs[1].set_ylabel('R squared')
 axs[1].legend()
 plt.suptitle('Loss and R squared curves during training', y=0.92)
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-MLPCNN.png'))
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-MLPCNN-32.png'))
 plt.show()
 
 # Evaluate model
@@ -267,5 +259,5 @@ ax.set_title('Ground Truth vs Predicted Values')
 ax.legend()
 # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
 ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch-1]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-MLPCNN.png'))
+plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-MLPCNN-32.png'))
 plt.show()
