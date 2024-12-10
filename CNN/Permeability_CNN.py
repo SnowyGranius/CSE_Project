@@ -156,13 +156,14 @@ trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, 
 # Initialize the CNN
 loss_function = nn.MSELoss()
 
+torch.set_default_dtype(torch.float32)
+summary(NoPoolCNN1().to('cuda'), input_size=(1, 1000, 1000))
+summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
+torch.set_default_dtype(torch.float64)
+
 for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
     for lr in [1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2]:
-
-        torch.set_default_dtype(torch.float32)
-        summary(cnn, input_size=(1, 1000, 1000))
-        torch.set_default_dtype(torch.float64)
-
+        print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
         # Log loss and accuracy per epoch
