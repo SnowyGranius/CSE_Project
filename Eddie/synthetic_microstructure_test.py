@@ -13,7 +13,7 @@ for i in range(800, 900, 100):
 
         #im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10, seed=14341)
         script_dir = os.path.dirname(__file__)
-        image_path = os.path.join(script_dir, 'pf_0.100_circle_Model_1.png')
+        image_path = os.path.join(script_dir, 'pf_0.500_triangle_Model_4.png')
         im = plt.imread(image_path)
         im = im[:, :, 0]
         im = np.invert(im.astype(bool))
@@ -35,7 +35,7 @@ for i in range(800, 900, 100):
         #per4 = perimeter(im, 4)
         #per8 = perimeter(im, 8)
         #per_c2 = perimeter_crofton(im, 2)
-        per_c4 = perimeter_crofton(im, 4)
+        per_c4 = perimeter_crofton(im, 4)/3000
 
         #print('Perimeter, 4 connectivity = {}'.format(per4))
         #print('Perimeter, 8 connectivity = {}'.format(per8))
