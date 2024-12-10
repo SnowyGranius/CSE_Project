@@ -13,7 +13,7 @@ import re
 from sklearn.model_selection import train_test_split
 from torchsummary import summary
 from scipy.stats import zscore
-from classes_cnn import BasicCNN, MLPCNN, EvenCNN, EvenCNN2000
+from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN, EvenCNN, EvenCNN2000
 import time
 
 
@@ -53,9 +53,9 @@ permeability_values = np.array(permeability_values)
 
 # Read images from the folder
 # Full_Images
-# Top_Left_Scales_Images
+# Top_Left_Scaled_Images
 # Full_Images_Double
-image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Full_Images')
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Top_Left_Scaled_Images')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
@@ -115,7 +115,7 @@ def count_parameters(model):
 torch.manual_seed(42)
 
 torch.set_default_dtype(torch.float32)
-summary(EvenCNN().to('cuda'), input_size=(1, 1000, 1000))
+summary(NoPoolCNN().to('cuda'), input_size=(1, 1000, 1000))
 torch.set_default_dtype(torch.float64)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
@@ -142,7 +142,7 @@ batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 # Initialize the CNN
-cnn = MLPCNN()
+cnn = NoPoolCNN()
 # print(cnn)
 # print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
 # Transfer model to your chosen device
