@@ -13,7 +13,7 @@ import re
 from sklearn.model_selection import train_test_split
 from torchsummary import summary
 from scipy.stats import zscore
-from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN, EvenCNN, EvenCNN2000
+from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, EvenCNN, EvenCNN2000
 import time
 
 
@@ -21,6 +21,7 @@ import time
 torch.set_default_dtype(torch.float64)
 
 my_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f'Using device: {my_device}')
 
 csv_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Porespy_homogenous_diamater')
 # csv_directory = 'C:\\Users\\ionst\\Documents\\GitHub\\Porespy_homogenous_diamater'
@@ -115,7 +116,7 @@ def count_parameters(model):
 torch.manual_seed(42)
 
 torch.set_default_dtype(torch.float32)
-summary(NoPoolCNN().to('cuda'), input_size=(1, 1000, 1000))
+summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
 torch.set_default_dtype(torch.float64)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
@@ -142,129 +143,148 @@ batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 # Initialize the CNN
-cnn = NoPoolCNN()
-# print(cnn)
-# print(f'Number of learnable parameters in {cnn._get_name()} model = {count_parameters(cnn)}')
-# Transfer model to your chosen device
-cnn.to(my_device)
-
-# Define the loss function and optimizer
-## Neg-log-likelihood loss for classification task
 loss_function = nn.MSELoss()
-optimizer = torch.optim.Adam(cnn.parameters(), lr=3e-4)
 
-# Log loss and accuracy per epoch
-loss_per_epoch = []
-R_squared_per_epoch = []
+for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
+    for lr in [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]:
+        optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
-# Number of epochs to train
-n_epochs = 50
+        # Log loss and accuracy per epoch
+        loss_per_epoch = []
+        R_squared_per_epoch = []
 
-start_time = time.time()
-# Run the training loop
-for epoch in range(0, n_epochs): # n_epochs at maximum
+        # Number of epochs to train
+        n_epochs = 1
 
-    # Print epoch
-    print(f'Starting epoch {epoch+1}')
+        start_time = time.time()
+        # Run the training loop
+        for epoch in range(0, n_epochs): # n_epochs at maximum
 
-    # Log loss and accuracy per batch
-    loss_per_batch = []
-    R_squared_per_batch = []
+            # Print epoch
+            print(f'Starting epoch {epoch+1}')
 
-    # Iterate over batches of training data using the DataLoader
-    for i, data in enumerate(trainloader, 0):
+            # Log loss and accuracy per batch
+            loss_per_batch = []
+            R_squared_per_batch = []
 
-        # Get and prepare inputs by converting to floats
-        inputs, targets = data
-        # Transfer data to your chosen device
-        inputs = inputs.to(my_device)
-        targets = targets.to(my_device)
+            # Iterate over batches of training data using the DataLoader
+            for i, data in enumerate(trainloader, 0):
 
-        # Zero the gradients
-        optimizer.zero_grad()
+                # Get and prepare inputs by converting to floats
+                inputs, targets = data
+                # Transfer data to your chosen device
+                inputs = inputs.to(my_device)
+                targets = targets.to(my_device)
 
-        # Perform forward pass
-        outputs = cnn(inputs)
-        outputs = outputs.squeeze()
+                # Zero the gradients
+                optimizer.zero_grad()
 
-        # Compute loss
-        loss = loss_function(outputs, targets)
-        
-        # Compute error (absolute difference) for accuracy calculation
-        error = torch.abs(outputs - targets)
-        # Compute R^2 score
-        ss_residual = torch.sum((targets - outputs)**2)
-        ss_total = torch.sum((targets - torch.mean(targets))**2)
-        # print(ss_residual, ss_total)
+                # Perform forward pass
+                outputs = cnn(inputs)
+                outputs = outputs.squeeze()
+
+                # Compute loss
+                loss = loss_function(outputs, targets)
+                
+                # Compute error (absolute difference) for accuracy calculation
+                error = torch.abs(outputs - targets)
+                # Compute R^2 score
+                ss_residual = torch.sum((targets - outputs)**2)
+                ss_total = torch.sum((targets - torch.mean(targets))**2)
+                # print(ss_residual, ss_total)
+                R_squared = 1 - (ss_residual / ss_total)
+
+                # Perform backwards pass
+                loss.backward()
+
+                # Perform optimization
+                optimizer.step()
+                
+                # Log loss value per batch
+                loss_per_batch.append(loss.item())
+                R_squared_per_batch.append(R_squared.item())
+
+            # Log loss value per epoch
+            loss_per_epoch.append(np.mean(loss_per_batch))
+            
+            # Log accuracy value per epoch
+            R_squared_per_epoch.append(np.mean(R_squared_per_batch))
+            print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
+            
+            
+        # Process is complete.
+        print('Training process has finished.')
+
+        end_time = time.time()
+        print(f'Training time: {end_time - start_time} seconds')
+
+        #scale back the permeability values
+        train_permeability = train_permeability * std_permeability + mean_permeability
+        test_permeability = test_permeability * std_permeability + mean_permeability
+
+
+        fig, axs = plt.subplots(2,1,figsize=(8,8))
+        # Plot loss per epoch
+        axs[0].plot(np.arange(1,len(loss_per_epoch)+1), loss_per_epoch, color='blue', label='Training loss', marker='.')
+        axs[0].grid(True)
+        axs[0].set_xlabel('Epoch')
+        axs[0].set_ylabel('Loss')
+        axs[0].legend() 
+        # Plot accuracy per epoch
+        axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training R squared', marker='x')
+        axs[1].grid(True)
+        axs[1].set_xlabel('Epoch')
+        axs[1].set_ylabel('R squared')
+        axs[1].legend()
+        plt.suptitle('Loss and R squared curves during training', y=0.92)
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Loss_R_squared-{cnn.__class__.__name__}-{lr}.png'))
+
+        # Evaluate model
+        cnn.eval()
+
+        torch.cuda.empty_cache()
+
+        with torch.no_grad():
+            test_inputs = dataset_test.X.to('cpu')
+            cnn = cnn.to('cpu')
+            test_predictions = cnn(test_inputs).cpu().numpy()
+            data_images_np = np.array(data_images)
+            data_images_tensor = torch.tensor(data_images_np).unsqueeze(1).to('cpu')
+            all_predictions = cnn(data_images_tensor).cpu().numpy()
+
+
+        # test_predictions = outputs_test.cpu().numpy()
+        test_predictions = test_predictions * std_permeability + mean_permeability
+        test_targets = np.array(dataset_test.y) * std_permeability + mean_permeability
+        # all_predictions = outputs_all.cpu().numpy()
+        all_predictions = all_predictions * std_permeability + mean_permeability
+        all_targets = permeability_values * std_permeability + mean_permeability
+
+        # compute the test R squared
+        ss_residual = np.sum((test_targets - test_predictions)**2)
+        ss_total = np.sum((test_targets - np.mean(test_targets))**2)
         R_squared = 1 - (ss_residual / ss_total)
 
-        # Perform backwards pass
-        loss.backward()
 
-        # Perform optimization
-        optimizer.step()
-        
-        # Log loss value per batch
-        loss_per_batch.append(loss.item())
-        R_squared_per_batch.append(R_squared.item())
-
-    # Log loss value per epoch
-    loss_per_epoch.append(np.mean(loss_per_batch))
-    
-    # Log accuracy value per epoch
-    R_squared_per_epoch.append(np.mean(R_squared_per_batch))
-    print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
-    
-    
-# Process is complete.
-print('Training process has finished.')
-
-end_time = time.time()
-print(f'Training time: {end_time - start_time} seconds')
-
-#scale back the permeability values
-train_permeability = train_permeability * std_permeability + mean_permeability
-test_permeability = test_permeability * std_permeability + mean_permeability
-
-
-fig, axs = plt.subplots(2,1,figsize=(8,8))
-# Plot loss per epoch
-axs[0].plot(np.arange(1,len(loss_per_epoch)+1), loss_per_epoch, color='blue', label='Training loss', marker='.')
-axs[0].grid(True)
-axs[0].set_xlabel('Epoch')
-axs[0].set_ylabel('Loss')
-axs[0].legend() 
-# Plot accuracy per epoch
-axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training R squared', marker='x')
-axs[1].grid(True)
-axs[1].set_xlabel('Epoch')
-axs[1].set_ylabel('R squared')
-axs[1].legend()
-plt.suptitle('Loss and R squared curves during training', y=0.92)
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Loss_R_squared-MLPCNN.png'))
-plt.show()
-
-# Evaluate model
-cnn.eval()
-
-with torch.no_grad():
-    test_inputs = dataset_test.X.to(my_device)
-    outputs = cnn(test_inputs)
-
-test_predictions = outputs.cpu().numpy()
-test_predictions = test_predictions * std_permeability + mean_permeability
-test_targets = np.array(dataset_test.y) * std_permeability + mean_permeability
-
-
-# Visualize the ground truth on x axis and predicted values on y axis
-fig, ax = plt.subplots(figsize=(8, 8))
-ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
-ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
-ax.set_xlabel('Ground Truth')
-ax.set_ylabel('Predicted')
-ax.set_title('Ground Truth vs Predicted Values')
-ax.legend()
-# r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
-ax.text(0.05, 0.95, f'R^2: {R_squared_per_epoch[epoch-1]:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'Ground_Truth_vs_Predicted-MLPCNN.png'))
-plt.show()
+        # Visualize the ground truth on x axis and predicted values on y axis
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
+        ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.set_xlabel('Ground Truth')
+        ax.set_ylabel('Predicted')
+        ax.set_title('Ground Truth vs Predicted Values')
+        ax.legend()
+        # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
+        ax.text(0.05, 0.95, f'R^2: {R_squared:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-{cnn.__class__.__name__}-{lr}.png'))
+        #free up memory
+        del test_inputs
+        del data_images_np
+        del data_images_tensor
+        del test_predictions
+        del test_targets
+        del all_predictions
+        del all_targets
+        del R_squared
+        torch.cuda.empty_cache()
+        cnn = cnn.to(my_device) 

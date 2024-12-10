@@ -29,8 +29,7 @@ class BasicCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Flatten(),
-            ############## MLP LAYERS #############
-            nn.Linear(4608, 1), # 4608, 18432, 51200,
+            nn.Linear(4608, 1),
         )
         
     def forward(self, x):
@@ -65,8 +64,7 @@ class MLPCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Flatten(),
-            ############## MLP LAYERS #############
-            nn.Linear(4608, 800), # 4608, 18432, 51200,
+            nn.Linear(4608, 800),
             nn.ReLU(),
             nn.Linear(800, 100),
             nn.ReLU(),
@@ -77,7 +75,7 @@ class MLPCNN(nn.Module):
     def forward(self, x):
         return self.layers(x)
     
-class NoPoolCNN(nn.Module):
+class NoPoolCNN1(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
@@ -112,8 +110,51 @@ class NoPoolCNN(nn.Module):
             
 
             nn.Flatten(),
-            ############## MLP LAYERS #############
-            nn.Linear(4096, 100), # 4608, 18432, 51200,
+            nn.Linear(4096, 100),
+            nn.ReLU(),
+            nn.Linear(100, 10),
+            nn.Linear(10, 1)
+        )
+        
+    def forward(self, x):
+        return self.layers(x)
+    
+class NoPoolCNN2(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.Sequential(
+
+            nn.Conv2d(1, 4, kernel_size=2, padding=1), 
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(4, 8, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(8, 16, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(16, 32, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(32, 64, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(64, 64, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(64, 64, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+
+            nn.Flatten(),
+            nn.Linear(4096, 100),
             nn.ReLU(),
             nn.Linear(100, 10),
             nn.Linear(10, 1)
@@ -156,7 +197,6 @@ class EvenCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
 
             nn.Flatten(),
-            ############## MLP LAYERS #############
             nn.Linear(16384, 1024),
             nn.ReLU(),
             nn.Linear(1024, 64),
@@ -206,7 +246,6 @@ class EvenCNN2000(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
 
             nn.Flatten(),
-            ############## MLP LAYERS #############
             nn.Linear(16384, 1024),
             nn.ReLU(),
             nn.Linear(1024, 64),
