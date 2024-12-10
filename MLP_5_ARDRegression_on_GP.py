@@ -51,7 +51,7 @@ def plot_preds(mu_pred, X_train, X_test, y_train, posterior_samples, domain, con
     ax2.set_title("Posterior Samples")
     ax2.grid()
     plt.tight_layout()
-    plt.savefig('GP_Confidence_Interval')
+    #plt.savefig('GP_Confidence_Interval')
     plt.show()
     
 # Evaluate different combinations of hyperparameters
@@ -104,12 +104,12 @@ for path in pathlist:
     # Evaluate model
     mse = mean_squared_error(y_test_inv, mu_pred)
     r2 = r2_score(y_test_inv, mu_pred)
-    print(f"Mean Squared Error: {mse:.12f}")
+    print(f"Mean Squared Error: {mse:.6e}")
     print(f"R² Score: {r2:.5f}")
     
     plt.figure(figsize=(10, 7))
 
-    plt.scatter(y_test_inv, mu_pred, alpha=0.6, color='b', label=f'R²: {r2:.5f}\nMSE (scaled data): {mse:.5f}')
+    plt.scatter(y_test_inv, mu_pred, alpha=0.6, color='b', label=f'R²: {r2:.5f}\nMSE (scaled data): {mse:.3e}')
     plt.plot([min(y_test_inv), max(y_test_inv)],
              [min(y_test_inv), max(y_test_inv)], color='r', linestyle='--', label='Parity Line')
 
@@ -121,7 +121,7 @@ for path in pathlist:
     plt.grid(True)
     plt.axis('equal')
     
-    plt.savefig('Parity_GP', dpi=300)
+    #plt.savefig('Parity_GP', dpi=300)
     plt.show()
     
     posterior_samples = gp.sample_y(X_test, n_samples=12).T
