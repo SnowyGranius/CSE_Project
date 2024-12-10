@@ -29,7 +29,7 @@ def read_circle_data(file_path):
             y_coord = np.append(y_coord, [y])
             radii = np.append(radii, [radius])
 
-def generate_image(image_name, image_shape=(3000, 3000)):
+def generate_image(image_name, image_shape=(10000, 10000)):
     # Create a blank binary image
     image = np.zeros(image_shape, dtype=np.uint8)
 
@@ -60,7 +60,7 @@ def generate_image(image_name, image_shape=(3000, 3000)):
         # image = image[:half_height, :half_width]
 
         image_name = image_name.split('.png')[0]
-        plt.imsave(f'{current_directory}/Full_Images_3000x3000/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
+        plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
         image = np.zeros(image_shape, dtype=np.uint8)
 
     for i in range(nr_circles):
@@ -72,7 +72,7 @@ def generate_image(image_name, image_shape=(3000, 3000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_3000x3000/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
 
     image = np.zeros(image_shape, dtype=np.uint8)
     for i in range(nr_circles):
@@ -96,7 +96,7 @@ def generate_image(image_name, image_shape=(3000, 3000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_3000x3000/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
 
     # Generate isosceles triangle within the ellipse
     image = np.zeros(image_shape, dtype=np.uint8)
@@ -123,10 +123,10 @@ def generate_image(image_name, image_shape=(3000, 3000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_3000x3000/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
 
-Models = np.arange(1, 26, 1)
-pfs = ['0.1', '0.2', '0.3', '0.4', '0.5']
+Models = np.arange(1, 2, 1)
+pfs = ['0.2', '0.3', '0.4', '0.5']
 # Models = range(1, 26)
 # pfs = np.arange(1, 11, 1) / 10
 # print(pfs)

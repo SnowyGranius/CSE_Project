@@ -12,14 +12,14 @@ for i in range(800, 900, 100):
         # np.random.seed(10)
         nr_images = 20
 
-        im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10, seed=14341)
+        #im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10, seed=14341)
         script_dir = os.path.dirname(__file__)
-        image_path = os.path.join(script_dir, 'pf_0.100_circle_Model_1.png')
+        image_path = os.path.join(script_dir, 'Synthetic_Image_Analysis', 'pf_0.500_triangle_Model_1.png')
         im = plt.imread(image_path)
         im = im[:, :, 0]
         im = np.invert(im.astype(bool))
-        plt.imshow(im)
-        plt.show()
+        plt.imshow(im, interpolation='none', cmap='gray')
+        #plt.show()
 
 
         #profile=ps.metrics.representative_elementary_volume(im=im)
@@ -29,18 +29,18 @@ for i in range(800, 900, 100):
         print('M0 = {}'.format(M0))
 
         #M1
-        mesh = ps.tools.mesh_region(region = im)
+        #mesh = ps.tools.mesh_region(region = im)
         #M1 = ps.metrics.mesh_surface_area(mesh = mesh)
         #print('M1 = {}'.format(M1))
 
-        #per4 = perimeter(im, 4)
-        #per8 = perimeter(im, 8)
-        #per_c2 = perimeter_crofton(im, 2)
-        per_c4 = perimeter_crofton(im, 4)/3000
+        per4 = perimeter(im, 4)/10000
+        per8 = perimeter(im, 8)/10000
+        per_c2 = perimeter_crofton(im, 2)/10000
+        per_c4 = perimeter_crofton(im, 4)/10000
 
-        #print('Perimeter, 4 connectivity = {}'.format(per4))
-        #print('Perimeter, 8 connectivity = {}'.format(per8))
-        # print('Crofton Perimeter, 2 connectivity = {}'.format(per_c2))
+        print('Perimeter, 4 connectivity = {}'.format(per4))
+        print('Perimeter, 8 connectivity = {}'.format(per8))
+        print('Crofton Perimeter, 2 connectivity = {}'.format(per_c2))
         print('Crofton Perimeter, 4 connectivity = {}'.format(per_c4))
 
         im_inv = np.invert(im)
