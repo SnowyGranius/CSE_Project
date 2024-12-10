@@ -154,7 +154,7 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         R_squared_per_epoch = []
 
         # Number of epochs to train
-        n_epochs = 1
+        n_epochs = 50
 
         start_time = time.time()
         # Run the training loop
