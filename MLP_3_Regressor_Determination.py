@@ -234,11 +234,11 @@ if use_all is False:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
 
 
-        #best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
-        #print(best_models)
+        best_models = automatic_process_regression(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+        print(best_models)
         
-        ARD_results = ARDRegression_model_optimized(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
-        print(ARD_results)
+        #ARD_results = ARDRegression_model_optimized(X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled)
+        #print(ARD_results)
     
 else:
     for path in pathlist:
