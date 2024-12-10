@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import os
 import glob
+import seaborn as sns
 import torch
 
 from sklearn.preprocessing import StandardScaler
@@ -66,7 +67,7 @@ for path in pathlist:
     df_from_each_file = (pd.read_csv(f, dtype=np.float64) for f in all_files)
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     
-    X, y = concatenated_df[['Surface']].values, concatenated_df['Permeability'].values.reshape(-1, 1)
+    X, y = concatenated_df[['Porosity', 'Surface', 'Euler_mean_vol']].values, concatenated_df['Permeability'].values.reshape(-1, 1)
 
     scaler_X = StandardScaler()
     scaler_y = StandardScaler()
@@ -127,8 +128,19 @@ for path in pathlist:
     posterior_samples_inv = scaler_y.inverse_transform(posterior_samples)
 
     # Plot predictions
-    domain = [X_test_inv.min(), X_test_inv.max()]
-    plot_preds(mu_pred, X_train_inv, X_test_inv, y_train_inv, posterior_samples_inv, domain, confidence_upper, confidence_lower)
+    #domain = [X_test_inv.min(), X_test_inv.max()]
+    #plot_preds(mu_pred, X_train_inv, X_test_inv, y_train_inv, posterior_samples_inv, domain, confidence_upper, confidence_lower)
     
+    #print("Learned length scales: ", gp.kernel_.get_params()['k1'].length_scale)
+    print("Learned length scales: ", gp.kernel_)
     
+    feature_names = ['Porosity', 'Surface', 'Euler_mean_vol']
+    length_scales = gp.kernel_.k2.length_scale
+    sns.barplot(x=feature_names, y=length_scales)
+    plt.title("Feature Relevance (ARD)")
+    plt.ylabel("Length Scale")
+    plt.xlabel("Feature")
+    plt.tight_layout()
+    plt.show()
+        
     
