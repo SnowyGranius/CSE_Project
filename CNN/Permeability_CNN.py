@@ -117,9 +117,7 @@ def count_parameters(model):
 # Set fixed random number seed for reproducibility of random initializations
 torch.manual_seed(42)
 
-torch.set_default_dtype(torch.float32)
-summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
-torch.set_default_dtype(torch.float64)
+
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 
 # Initialize the dataset objects
@@ -160,6 +158,11 @@ loss_function = nn.MSELoss()
 
 for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
     for lr in [1e-6, 1e-5, 1e-4, 1e-3, 1e-2]:
+
+        torch.set_default_dtype(torch.float32)
+        summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
+        torch.set_default_dtype(torch.float64)
+
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
         # Log loss and accuracy per epoch
@@ -288,7 +291,7 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         ax.set_title('Ground Truth vs Predicted Values')
         ax.legend()
         # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
-        ax.text(0.05, 0.95, f'R^2: {R_squared:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-{cnn.__class__.__name__}-{lr}.png'))
         #free up memory
         del test_inputs
