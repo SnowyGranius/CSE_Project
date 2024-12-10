@@ -152,7 +152,7 @@ if DATA_ANALYSIS:
         for resolution in resolutions:
             filtered_data = data[data['Resolution'] == resolution]
             avg_M0 = filtered_data.groupby('Resolution')['M0'].mean()
-            ax.plot(avg_M0.index/np.sqrt((im_nrs**2)), avg_M0.values, marker='o', label=f'Resolution {resolution}')
+            ax.plot(avg_M0.index/im_nrs, avg_M0.values, marker='o', label=f'Resolution {resolution}')
         ax.set_ylabel('Mean M0')
         #ax.legend()
         
@@ -163,7 +163,7 @@ if DATA_ANALYSIS:
             filtered_data = data[data['Resolution'] == resolution]
             avg_M1 = filtered_data.groupby('Resolution')['M1'].mean()
             subimage_resolution = resolution // int(np.sqrt(filtered_data['Subsamples'].iloc[0]))
-            ax.plot(avg_M1.index/np.sqrt((im_nrs**2)), avg_M1.values/subimage_resolution, marker='o', label=f'Resolution {resolution}')
+            ax.plot(avg_M1.index/im_nrs, avg_M1.values/subimage_resolution, marker='o', label=f'Resolution {resolution}')
         ax.set_ylabel('Mean M1')
         #ax.legend()
 
@@ -173,7 +173,7 @@ if DATA_ANALYSIS:
         for resolution in resolutions:
             filtered_data = data[data['Resolution'] == resolution]
             avg_M2 = filtered_data.groupby('Resolution')['M2'].mean()
-            ax.plot(avg_M2.index/np.sqrt((im_nrs**2)), avg_M2.values, marker='o', label=f'Resolution {resolution}')
+            ax.plot(avg_M2.index/im_nrs, avg_M2.values, marker='o', label=f'Resolution {resolution}')
         ax.set_xlabel('Resolution')
         ax.set_ylabel('Mean M2')
         #ax.legend()

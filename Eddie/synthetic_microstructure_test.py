@@ -10,10 +10,11 @@ for i in range(800, 900, 100):
     #for k in np.arange(0.6, 0.8, 0.1):
         # 1 = pore space, 0 = solid space
         # np.random.seed(10)
+        nr_images = 20
 
-        #im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10, seed=14341)
+        im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10, seed=14341)
         script_dir = os.path.dirname(__file__)
-        image_path = os.path.join(script_dir, 'pf_0.500_triangle_Model_4.png')
+        image_path = os.path.join(script_dir, 'pf_0.100_circle_Model_1.png')
         im = plt.imread(image_path)
         im = im[:, :, 0]
         im = np.invert(im.astype(bool))
