@@ -235,10 +235,6 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         end_time = time.time()
         print(f'Training time: {end_time - start_time} seconds')
 
-        #scale back the permeability values
-        train_permeability = train_permeability * std_permeability + mean_permeability
-        test_permeability = test_permeability * std_permeability + mean_permeability
-
 
         fig, axs = plt.subplots(2,1,figsize=(8,8))
         # Plot loss per epoch
@@ -275,13 +271,28 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         test_targets = np.array(dataset_test.y) * std_permeability + mean_permeability
         # all_predictions = outputs_all.cpu().numpy()
         all_predictions = all_predictions * std_permeability + mean_permeability
-        all_targets = permeability_values * std_permeability + mean_permeability
+        all_targets = permeability_values
 
         # compute the test R squared
         ss_residual = np.sum((test_targets - test_predictions)**2)
         ss_total = np.sum((test_targets - np.mean(test_targets))**2)
-        R_squared = 1 - (ss_residual / ss_total)
+        R_squared_test = 1 - (ss_residual / ss_total)
+        
+        ss_residual = np.sum((all_targets - all_predictions)**2)
+        ss_total = np.sum((all_targets - np.mean(all_targets))**2)
+        R_squared_all = 1 - (ss_residual / ss_total)
 
+        # Visualize the ground truth on x axis and predicted values on y axis
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.scatter(all_targets, all_predictions, color='blue', label='Predictions')
+        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.set_xlabel('Ground Truth')
+        ax.set_ylabel('Predicted')
+        ax.set_title('Ground Truth vs Predicted Values')
+        ax.legend()
+        # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-all-{cnn.__class__.__name__}-{lr}.png'))
 
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
@@ -293,8 +304,9 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         ax.legend()
         # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
         ax.text(0.05, 0.95, f'Test R^2: {R_squared:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-{cnn.__class__.__name__}-{lr}.png'))
-        #free up memory
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-test-{cnn.__class__.__name__}-{lr}.png'))
+        
+        # free up memory
         del test_inputs
         del data_images_np
         del data_images_tensor
@@ -302,6 +314,7 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         del test_targets
         del all_predictions
         del all_targets
-        del R_squared
+        del R_squared_all
+        del R_squared_test
         torch.cuda.empty_cache()
         cnn = cnn.to(my_device) 
