@@ -64,11 +64,9 @@ class MLPCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             nn.Flatten(),
-            nn.Linear(4608, 800),
+            nn.Linear(4608, 200),
             nn.ReLU(),
-            nn.Linear(800, 100),
-            nn.ReLU(),
-            nn.Linear(100, 10),
+            nn.Linear(200, 10),
             nn.Linear(10, 1)
         )
         
@@ -110,9 +108,9 @@ class NoPoolCNN1(nn.Module):
             
 
             nn.Flatten(),
-            nn.Linear(4096, 100),
+            nn.Linear(4096, 200),
             nn.ReLU(),
-            nn.Linear(100, 10),
+            nn.Linear(200, 10),
             nn.Linear(10, 1)
         )
         
@@ -154,9 +152,9 @@ class NoPoolCNN2(nn.Module):
             
 
             nn.Flatten(),
-            nn.Linear(4096, 100),
+            nn.Linear(4096, 200),
             nn.ReLU(),
-            nn.Linear(100, 10),
+            nn.Linear(200, 10),
             nn.Linear(10, 1)
         )
         

@@ -16,21 +16,24 @@ from scipy.stats import zscore
 from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, EvenCNN, EvenCNN2000
 import time
 
-
-# NLLLoss function expects float64 dtype
+# Default dype is float64. Not working currently on DelftBlue
 torch.set_default_dtype(torch.float64)
 
+# Set fixed random number seed for reproducibility of random initializations
+torch.manual_seed(42)
+
+# Choose whether to use take account 15% validation set or not. Not used at the moment
 validation = False
 
+# Use CUDA
 my_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'Using device: {my_device}')
 
+# Load the data from csv files and read the images
 csv_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Porespy_homogenous_diamater')
-# csv_directory = 'C:\\Users\\ionst\\Documents\\GitHub\\Porespy_homogenous_diamater'
 if not os.path.exists(csv_directory):
     raise FileNotFoundError(f"Directory {csv_directory} does not exist.")
 
-#open all csv files in the directory and for each file store the packing fraction found in the name, the shape found in the name and the data in the file as a pandas dataframe
 data_csv = []
 data_images = []
 all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
@@ -45,12 +48,11 @@ for file in all_csv:
         df['Model'] = df.index + 1  # Model number is one higher than the index of the dataframe
         data_csv.append(df)
 
-# Extract permeability values from data_csv
 permeability_values = []
 for df in data_csv:
     permeability_values.extend(df['Permeability'].values)
 
-print(len(permeability_values))
+print(f'Number of permeability values: {len(permeability_values)}')
 
 permeability_values = np.array(permeability_values)
 
@@ -63,7 +65,6 @@ if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
 all_images = glob.glob(os.path.join(image_directory, "*.png"))
-# print(all_images)
 for image_file in all_images:
     match = re.search(r'pf_(\d\.\d+)_(circle)_Model_(\d+)\.png', image_file)
     if match:
@@ -82,22 +83,17 @@ for image_file in all_images:
             'Image': image
         })
 
-num_rows = sum(len(df) for df in data_csv)
-print(f'Number of rows in data_csv: {num_rows}')
+data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
+print(f'Number of images: {len(data_images)}')
 
-
+# Define the dataset class
 class PermeabilityDataset(torch.utils.data.Dataset):
     '''
     Permeability dataset class for regression
     '''
     def __init__(self, X, y):
-        # Precomputed training set statistics for scaling
         if not torch.is_tensor(X) and not torch.is_tensor(y):
-            # Apply scaling if necessary
-            # X is of shape [N, H, W], the CNN expects input [N, Channels, H, W]
-            # The image is greyscale (contains only 1 channel), add a dummy channel dimension
             X = np.expand_dims(X, axis=1)
-            # Convert to Pytorch tensor objects
             self.X = torch.tensor(X)
             self.y = torch.tensor(y)
 
@@ -105,24 +101,10 @@ class PermeabilityDataset(torch.utils.data.Dataset):
         return len(self.X)
 
     def __getitem__(self, i):
-    # This is the method that returns the input, target data during model training
         return self.X[i], self.y[i]
 
 
-
-# Helper function to count number of learnable parameters in neural network
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-# Set fixed random number seed for reproducibility of random initializations
-torch.manual_seed(42)
-
-
-data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
-
-# Initialize the dataset objects
-
-
+# Splitting the data into training, testing (and validation) sets
 
 if validation:
     train_images, dummy_images, train_permeability, dummy_permeability = train_test_split(
@@ -135,7 +117,7 @@ else:
     train_images, test_images, train_permeability, test_permeability = train_test_split(
         data_images, permeability_values, test_size=0.30, random_state=42)
 
-# normalize the training permeability
+# Normalizing the training permeability
 mean_permeability = np.mean(train_permeability)
 std_permeability = np.std(train_permeability)
 train_permeability = (train_permeability - mean_permeability) / std_permeability
@@ -153,16 +135,16 @@ if validation:
 batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
-# Initialize the CNN
 loss_function = nn.MSELoss()
 
+# Visualizing the CNN architectures
 torch.set_default_dtype(torch.float32)
 summary(NoPoolCNN1().to('cuda'), input_size=(1, 1000, 1000))
 summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
 torch.set_default_dtype(torch.float64)
 
-for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
-    for lr in [1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2]:
+for cnn in [NoPoolCNN2().to(my_device), MLPCNN().to(my_device)]:
+    for lr in [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1]:
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
@@ -228,12 +210,10 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
             R_squared_per_epoch.append(np.mean(R_squared_per_batch))
             print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
             
-            
-        # Process is complete.
         print('Training process has finished.')
 
         end_time = time.time()
-        print(f'Training time: {end_time - start_time} seconds')
+        print(f'Training time: {end_time - start_time} seconds\n')
 
 
         fig, axs = plt.subplots(2,1,figsize=(8,8))
@@ -268,9 +248,11 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
 
         # test_predictions = outputs_test.cpu().numpy()
         test_predictions = test_predictions * std_permeability + mean_permeability
+        test_predictions = test_predictions.reshape(-1)
         test_targets = np.array(dataset_test.y) * std_permeability + mean_permeability
         # all_predictions = outputs_all.cpu().numpy()
         all_predictions = all_predictions * std_permeability + mean_permeability
+        all_predictions = all_predictions.reshape(-1)
         all_targets = permeability_values
 
         # compute the test R squared
@@ -278,9 +260,15 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         ss_total = np.sum((test_targets - np.mean(test_targets))**2)
         R_squared_test = 1 - (ss_residual / ss_total)
         
+        # Ensure all_targets and all_predictions have the same length
+        if len(all_targets) != len(all_predictions):
+            raise ValueError("Length of all_targets and all_predictions must be the same")
+
+        # Compute the residual sum of squares and total sum of squares
         ss_residual = np.sum((all_targets - all_predictions)**2)
         ss_total = np.sum((all_targets - np.mean(all_targets))**2)
         R_squared_all = 1 - (ss_residual / ss_total)
+    
 
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
@@ -290,8 +278,9 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
         ax.legend()
-        ax.text(0.05, 0.95, f'Test R^2: {R_squared_all:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.05, 0.95, f'R^2: {R_squared_all:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-all-{cnn.__class__.__name__}-{lr}.png'))
+        
 
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
@@ -303,8 +292,9 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         ax.legend()
         ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-test-{cnn.__class__.__name__}-{lr}.png'))
-        
-        # free up memory
+        plt.close('all')
+
+        # Free up memory to avoid 'CUDA out of memory' error when moving from one iteration to the next
         del test_inputs
         del data_images_np
         del data_images_tensor
