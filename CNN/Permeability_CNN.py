@@ -140,10 +140,10 @@ loss_function = nn.MSELoss()
 # Visualizing the CNN architectures
 torch.set_default_dtype(torch.float32)
 summary(NoPoolCNN1().to('cuda'), input_size=(1, 1000, 1000))
-summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
+#summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
 torch.set_default_dtype(torch.float64)
 
-for cnn in [NoPoolCNN2().to(my_device), MLPCNN().to(my_device)]:
+for cnn in [NoPoolCNN1().to(my_device)]:
     for lr in [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1]:
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
