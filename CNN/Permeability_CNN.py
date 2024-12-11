@@ -290,20 +290,18 @@ for cnn in [NoPoolCNN2().to(my_device), NoPoolCNN1().to(my_device)]:
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
         ax.legend()
-        # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
-        ax.text(0.05, 0.95, f'Test R^2: {R_squared:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared_all:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-all-{cnn.__class__.__name__}-{lr}.png'))
 
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
-        ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
         ax.legend()
-        # r_squared = 1 - np.sum((test_targets - test_predictions)**2) / np.sum((test_targets - np.mean(test_targets))**2)
-        ax.text(0.05, 0.95, f'Test R^2: {R_squared:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-test-{cnn.__class__.__name__}-{lr}.png'))
         
         # free up memory
