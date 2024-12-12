@@ -73,7 +73,7 @@ class MLPCNN(nn.Module):
     def forward(self, x):
         return self.layers(x)
     
-class NoPoolCNN1(nn.Module):
+class NoPoolCNN1(nn.Module): # first attempt at a no pooling CNN
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
@@ -117,7 +117,7 @@ class NoPoolCNN1(nn.Module):
     def forward(self, x):
         return self.layers(x)
     
-class NoPoolCNN2(nn.Module):
+class NoPoolCNN2(nn.Module): # lighter model compared to 1
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
@@ -153,6 +153,94 @@ class NoPoolCNN2(nn.Module):
 
             nn.Flatten(),
             nn.Linear(4096, 200),
+            nn.ReLU(),
+            nn.Linear(200, 10),
+            nn.Linear(10, 1)
+        )
+        
+    def forward(self, x):
+        return self.layers(x)
+    
+class NoPoolCNN3(nn.Module): # heavier model compared to 1
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.Sequential(
+
+            nn.Conv2d(1, 8, kernel_size=2, padding=1), 
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(8, 32, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(32, 64, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(64, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+
+            nn.Flatten(),
+            nn.Linear(8192, 200),
+            nn.ReLU(),
+            nn.Linear(200, 10),
+            nn.Linear(10, 1)
+        )
+        
+    def forward(self, x):
+        return self.layers(x)
+    
+class NoPoolCNN4(nn.Module): # heaviest no-pool model with 128 kernels
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.Sequential(
+
+            nn.Conv2d(1, 8, kernel_size=2, padding=1), 
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(8, 32, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(32, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(128, 128, kernel_size=2, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+
+            nn.Flatten(),
+            nn.Linear(8192, 200),
             nn.ReLU(),
             nn.Linear(200, 10),
             nn.Linear(10, 1)

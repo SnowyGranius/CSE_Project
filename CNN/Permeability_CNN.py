@@ -12,7 +12,7 @@ import re
 from sklearn.model_selection import train_test_split
 from torchsummary import summary
 from scipy.stats import zscore
-from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, EvenCNN, EvenCNN2000
+from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4, EvenCNN, EvenCNN2000
 import time
 
 # Default dype is float64. Not working currently on DelftBlue
@@ -138,16 +138,17 @@ loss_function = nn.MSELoss()
 
 # Visualizing the CNN architectures
 torch.set_default_dtype(torch.float32)
-summary(MLPCNN().to('cuda'), input_size=(1, 1000, 1000))
-summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
+summary(NoPoolCNN3().to('cuda'), input_size=(1, 1000, 1000))
+summary(NoPoolCNN1().to('cuda'), input_size=(1, 1000, 1000))
+summary(NoPoolCNN4().to('cuda'), input_size=(1, 1000, 1000))
 torch.set_default_dtype(torch.float64)
 
-for cnn in [MLPCNN().to(my_device), NoPoolCNN2().to(my_device)]:
+for cnn in [NoPoolCNN4().to(my_device), NoPoolCNN3().to(my_device), NoPoolCNN1().to(my_device)]:
     for lr in [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2]:
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
+
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
-    
         loss_per_epoch = []
         R_squared_per_epoch = []
 
