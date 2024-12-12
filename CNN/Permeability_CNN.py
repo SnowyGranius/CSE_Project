@@ -57,10 +57,10 @@ print(f'Number of permeability values: {len(permeability_values)}')
 permeability_values = np.array(permeability_values)
 
 # Read images from the folder
-# Full_Images
-# Top_Left_Scaled_Images
-# Full_Images_Double
-image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Top_Left_Scaled_Images')
+# Full_1000
+# Quarter_1000
+# Full_2000
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Quarter_1000')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
@@ -139,12 +139,12 @@ loss_function = nn.MSELoss()
 
 # Visualizing the CNN architectures
 torch.set_default_dtype(torch.float32)
-summary(NoPoolCNN1().to('cuda'), input_size=(1, 1000, 1000))
+summary(MLPCNN().to('cuda'), input_size=(1, 1000, 1000))
 #summary(NoPoolCNN2().to('cuda'), input_size=(1, 1000, 1000))
 torch.set_default_dtype(torch.float64)
 
-for cnn in [NoPoolCNN1().to(my_device)]:
-    for lr in [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1]:
+for cnn in [MLPCNN().to(my_device)]:
+    for lr in [5e-4]:
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
@@ -272,8 +272,8 @@ for cnn in [NoPoolCNN1().to(my_device)]:
 
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
-        ax.scatter(all_targets, all_predictions, color='blue', label='Predictions')
-        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.scatter(np.log10(all_targets), np.log10(all_predictions), color='blue', label='Predictions')
+        ax.plot([np.log10(all_targets.min()), np.log10(all_targets.max())], [np.log10(all_targets.min()), np.log10(all_targets.max())], 'k--', lw=2, label='Ideal')
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
@@ -284,8 +284,8 @@ for cnn in [NoPoolCNN1().to(my_device)]:
 
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
-        ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
-        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.scatter(np.log10(test_targets), np.log10(test_predictions), color='blue', label='Predictions')
+        ax.plot([np.log10(all_targets.min()), np.log10(all_targets.max())], [np.log10(all_targets.min()), np.log10(all_targets.max())], 'k--', lw=2, label='Ideal')
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')

@@ -13,7 +13,6 @@ from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, EvenCNN, EvenC
 import time
 
 # Default dype is float64. Not working currently on DelftBlue
-torch.set_default_dtype(torch.float64)
 
 # Set fixed random number seed for reproducibility of random initializations
 torch.manual_seed(42)
@@ -39,6 +38,7 @@ for file in all_csv:
         with open(file, 'r') as f:
             lines = f.readlines()
             headers = lines[0].strip().split(',')
+            print(headers)
             data = [line.strip().split(',') for line in lines[1:]]
             df = {header: [] for header in headers}
             for row in data:
@@ -53,7 +53,7 @@ for file in all_csv:
 
 permeability_values = []
 for df in data_csv:
-    permeability_values.extend(df['Permeability'])
+    permeability_values.extend(df['Permeability'].values)
 
 print(f'Number of permeability values: {len(permeability_values)}')
 
@@ -87,7 +87,7 @@ for image_file in all_images:
         })
 
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
-print(f'Number of images: {len(data_images)}\n')
+print(f'Number of images: {len(data_images)}')
 
 # Define the dataset class
 class PermeabilityDataset(torch.utils.data.Dataset):
@@ -135,13 +135,13 @@ if validation:
 
 
 # Initialize the dataloader using batch size hyperparameter
-batch_size = int(len(dataset_train)/2)
+batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 loss_function = nn.MSELoss()
 
 for cnn in [NoPoolCNN1().to(my_device)]:
-    for lr in [5e-4]:
+    for lr in [5e-4, 1e-3]:
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
