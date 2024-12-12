@@ -1,0 +1,163 @@
+Thu Dec 12 21:52:56 2024       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100 80GB PCIe          On  |   00000000:2C:00.0 Off |                    0 |
+| N/A   32C    P0             43W /  300W |       1MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Using device: cuda
+Number of permeability values: 100
+Number of images: 100
+Using CNN: BasicCNN with learning rate: 1e-06
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 5e-06
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 1e-05
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 5e-05
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 0.0001
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 0.0005
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 0.001
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 0.005
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 0.01
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 0.05
+Training process has finished.
+Using CNN: BasicCNN with learning rate: 0.1
+Training process has finished.
+Time taken for BasicCNN: 179.84658432006836 seconds
+Using CNN: MLPCNN with learning rate: 1e-06
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 5e-06
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 1e-05
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 5e-05
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 0.0001
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 0.0005
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 0.001
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 0.005
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 0.01
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 0.05
+Training process has finished.
+Using CNN: MLPCNN with learning rate: 0.1
+Training process has finished.
+Time taken for MLPCNN: 165.81372022628784 seconds
+Using CNN: NoPoolCNN1 with learning rate: 1e-06
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 5e-06
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 1e-05
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 5e-05
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 0.0001
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 0.0005
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 0.001
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 0.005
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 0.01
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 0.05
+Training process has finished.
+Using CNN: NoPoolCNN1 with learning rate: 0.1
+Training process has finished.
+Time taken for NoPoolCNN1: 371.9998354911804 seconds
+Using CNN: NoPoolCNN2 with learning rate: 1e-06
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 5e-06
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 1e-05
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 5e-05
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 0.0001
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 0.0005
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 0.001
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 0.005
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 0.01
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 0.05
+Training process has finished.
+Using CNN: NoPoolCNN2 with learning rate: 0.1
+Training process has finished.
+Time taken for NoPoolCNN2: 270.5583527088165 seconds
+Using CNN: NoPoolCNN3 with learning rate: 1e-06
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 5e-06
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 1e-05
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 5e-05
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 0.0001
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 0.0005
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 0.001
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 0.005
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 0.01
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 0.05
+Training process has finished.
+Using CNN: NoPoolCNN3 with learning rate: 0.1
+Training process has finished.
+Time taken for NoPoolCNN3: 506.1632082462311 seconds
+Using CNN: NoPoolCNN4 with learning rate: 1e-06
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 5e-06
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 1e-05
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 5e-05
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 0.0001
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 0.0005
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 0.001
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 0.005
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 0.01
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 0.05
+Training process has finished.
+Using CNN: NoPoolCNN4 with learning rate: 0.1
+Training process has finished.
+Time taken for NoPoolCNN4: 506.8429317474365 seconds
+gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
+78 %, 24 %, 17638 MiB, 2031620 ms

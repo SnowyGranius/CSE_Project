@@ -227,7 +227,7 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
         axs[1].set_ylim([0, 1])
         axs[1].legend(loc='lower right')
         plt.suptitle('Loss and training R squared curves during training', y=0.92)
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Loss_R_squared-{cnn.__class__.__name__}-{lr}.png'))
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Evolution/Loss_R_squared-{cnn.__class__.__name__}-{lr}.png'))
 
         # Evaluate model
         cnn.eval()
