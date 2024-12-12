@@ -3,14 +3,13 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from torch import nn
+import torch.nn.functional as F
 import os
 import sys
-import pandas as pd
 import glob
 import re
 from sklearn.model_selection import train_test_split
-from torchsummary import summary 
-from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4
+from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4, EvenCNN, EvenCNN2000
 import time
 
 # Default dype is float64. Not working currently on DelftBlue
@@ -38,21 +37,30 @@ all_csv.sort()
 
 for file in all_csv:
     if 'circle' in file:
-        df = pd.read_csv(file)
+        with open(file, 'r') as f:
+            print(f'Reading file: {file}')
+            lines = f.readlines()
+            headers = lines[0].strip().split(',')
+            data = [line.strip().split(',') for line in lines[1:]]
+            df = {header: [] for header in headers}
+            for row in data:
+                for header, value in zip(headers, row):
+                    df[header].append(float(value) if header == 'Permeability' else value)
         packing_fraction = re.search(r'\d.\d+', file).group()
         shape = re.search(r'circle|ellipse|trinagle|rectangle', file).group()
         df['Packing_Fraction'] = packing_fraction
         df['Shape'] = shape
-        df['Model'] = df.index + 1  # Model number is one higher than the index of the dataframe
+        df['Model'] = list(range(1, len(df['Permeability'])))  # Model number is one higher than the index of the dataframe
         data_csv.append(df)
 
 permeability_values = []
 for df in data_csv:
-    permeability_values.extend(df['Permeability'].values)
+    permeability_values.extend(df['Permeability'])
 
 print(f'Number of permeability values: {len(permeability_values)}')
 
 permeability_values = np.array(permeability_values)
+print(permeability_values)
 
 # Read images from the folder
 # Full_1000
@@ -63,11 +71,12 @@ if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
 all_images = glob.glob(os.path.join(image_directory, "*.png"))
+#sort the images in alphabetical order
 all_images.sort()
-
 for image_file in all_images:
     match = re.search(r'pf_(\d\.\d+)_(circle)_Model_(\d+)\.png', image_file)
     if match:
+        print(f'Reading image: {image_file}')
         packing_fraction = float(match.group(1))
         shape = match.group(2)
         model_number = int(match.group(3))
@@ -82,7 +91,7 @@ for image_file in all_images:
             # 'Shape': shape,
             'Image': image
         })
-
+print(data_images)
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 print(f'Number of images: {len(data_images)}')
 
@@ -137,28 +146,17 @@ trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, 
 
 loss_function = nn.MSELoss()
 
-# Visualizing the CNN architectures
-torch.set_default_dtype(torch.float32)
-summary(NoPoolCNN3().to('cuda'), input_size=(1, 1000, 1000))
-summary(NoPoolCNN1().to('cuda'), input_size=(1, 1000, 1000))
-summary(NoPoolCNN4().to('cuda'), input_size=(1, 1000, 1000))
-torch.set_default_dtype(torch.float64)
 
-def reset_weights(m):
-    if isinstance(m, (nn.Linear, nn.Conv2d)):  # Include other layers if needed
-        m.reset_parameters()
-
-for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my_device), NoPoolCNN2().to(my_device), NoPoolCNN3().to(my_device), NoPoolCNN4().to(my_device)]:
-    for lr in [1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1]:
-        cnn.apply(reset_weights)
+for cnn in [BasicCNN().to(my_device)]:
+    for lr in [5e-4]:
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
-        
+
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
         loss_per_epoch = []
         R_squared_per_epoch = []
 
-        n_epochs = 50
+        n_epochs = 30
 
         start_time = time.time()
         # Run the training loop
@@ -223,14 +221,14 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
         axs[0].set_xlabel('Epoch')
         axs[0].set_ylabel('Loss')
         axs[0].set_ylim([0, 1])
-        axs[0].legend(loc='lower right') 
+        axs[0].legend() 
 
         axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training R squared', marker='x')
         axs[1].grid(True)
         axs[1].set_xlabel('Epoch')
         axs[1].set_ylabel('R squared')
         axs[1].set_ylim([0, 1])
-        axs[1].legend(loc='lower right')
+        axs[1].legend()
         plt.suptitle('Loss and training R squared curves during training', y=0.92)
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Loss_R_squared-{cnn.__class__.__name__}-{lr}.png'))
 
@@ -322,7 +320,6 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
         plt.close('all')
 
         # Free up memory to avoid 'CUDA out of memory' error when moving from one iteration to the next
-        cnn.to(my_device)
         del test_inputs
         del data_images_np
         del data_images_tensor
@@ -333,3 +330,4 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
         del R_squared_all
         del R_squared_test
         torch.cuda.empty_cache()
+        cnn = cnn.to(my_device) 

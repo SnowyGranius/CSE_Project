@@ -3,13 +3,12 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from torch import nn
-import torch.nn.functional as F
 import os
 import sys
 import glob
 import re
 from sklearn.model_selection import train_test_split
-from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, EvenCNN, EvenCNN2000
+from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4
 import time
 
 # Default dype is float64. Not working currently on DelftBlue
@@ -33,6 +32,7 @@ if not os.path.exists(csv_directory):
 data_csv = []
 data_images = []
 all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
+all_csv.sort()
 
 for file in all_csv:
     if 'circle' in file:
@@ -60,14 +60,16 @@ print(f'Number of permeability values: {len(permeability_values)}')
 permeability_values = np.array(permeability_values)
 
 # Read images from the folder
-# Full_Images
-# Top_Left_Scaled_Images
-# Full_Images_Double
-image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Top_Left_Scaled_Images')
+# Full_1000
+# Quarter_1000
+# Full_2000
+image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), 'Image_dataset_generation/Quarter_1000')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
 
 all_images = glob.glob(os.path.join(image_directory, "*.png"))
+all_images.sort()
+
 for image_file in all_images:
     match = re.search(r'pf_(\d\.\d+)_(circle)_Model_(\d+)\.png', image_file)
     if match:
@@ -87,7 +89,7 @@ for image_file in all_images:
         })
 
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
-print(f'Number of images: {len(data_images)}\n')
+print(f'Number of images: {len(data_images)}')
 
 # Define the dataset class
 class PermeabilityDataset(torch.utils.data.Dataset):
@@ -135,31 +137,34 @@ if validation:
 
 
 # Initialize the dataloader using batch size hyperparameter
-batch_size = int(len(dataset_train)/2)
+batch_size = int(len(train_permeability)/2)
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 loss_function = nn.MSELoss()
 
-for cnn in [NoPoolCNN1().to(my_device)]:
-    for lr in [5e-4]:
+def reset_weights(m):
+    if isinstance(m, (nn.Linear, nn.Conv2d)):  # Include other layers if needed
+        m.reset_parameters()
+
+for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my_device), NoPoolCNN2().to(my_device), NoPoolCNN3().to(my_device), NoPoolCNN4().to(my_device)]:
+    start_time = time.time()
+    for lr in [1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1]:
+        cnn.apply(reset_weights)
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
-        # Log loss and accuracy per epoch
         loss_per_epoch = []
         R_squared_per_epoch = []
 
-        # Number of epochs to train
         n_epochs = 50
 
-        start_time = time.time()
+        
         # Run the training loop
         for epoch in range(0, n_epochs): # n_epochs at maximum
 
             # Print epoch
-            print(f'Starting epoch {epoch+1}')
+            #print(f'Starting epoch {epoch+1}')
 
-            # Log loss and accuracy per batch
             loss_per_batch = []
             R_squared_per_batch = []
 
@@ -182,12 +187,10 @@ for cnn in [NoPoolCNN1().to(my_device)]:
                 # Compute loss
                 loss = loss_function(outputs, targets)
                 
-                # Compute error (absolute difference) for accuracy calculation
                 error = torch.abs(outputs - targets)
                 # Compute R^2 score
                 ss_residual = torch.sum((targets - outputs)**2)
                 ss_total = torch.sum((targets - torch.mean(targets))**2)
-                # print(ss_residual, ss_total)
                 R_squared = 1 - (ss_residual / ss_total)
 
                 # Perform backwards pass
@@ -203,30 +206,27 @@ for cnn in [NoPoolCNN1().to(my_device)]:
             # Log loss value per epoch
             loss_per_epoch.append(np.mean(loss_per_batch))
             
-            # Log accuracy value per epoch
             R_squared_per_epoch.append(np.mean(R_squared_per_batch))
-            print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
+            #print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
             
         print('Training process has finished.')
 
-        end_time = time.time()
-        print(f'Training time: {end_time - start_time} seconds\n')
-
-
         fig, axs = plt.subplots(2,1,figsize=(8,8))
-        # Plot loss per epoch
+
         axs[0].plot(np.arange(1,len(loss_per_epoch)+1), loss_per_epoch, color='blue', label='Training loss', marker='.')
         axs[0].grid(True)
         axs[0].set_xlabel('Epoch')
         axs[0].set_ylabel('Loss')
-        axs[0].legend() 
-        # Plot accuracy per epoch
+        axs[0].set_ylim([0, 1])
+        axs[0].legend(loc='lower right')
+
         axs[1].plot(np.arange(1,len(R_squared_per_epoch)+1), R_squared_per_epoch, color='blue', label='Training R squared', marker='x')
         axs[1].grid(True)
         axs[1].set_xlabel('Epoch')
         axs[1].set_ylabel('R squared')
-        axs[1].legend()
-        plt.suptitle('Loss and R squared curves during training', y=0.92)
+        axs[1].set_ylim([0, 1])
+        axs[1].legend(loc='lower right')
+        plt.suptitle('Loss and training R squared curves during training', y=0.92)
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Loss_R_squared-{cnn.__class__.__name__}-{lr}.png'))
 
         # Evaluate model
@@ -274,9 +274,34 @@ for cnn in [NoPoolCNN1().to(my_device)]:
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
-        ax.legend()
-        ax.text(0.05, 0.95, f'R^2: {R_squared_all:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-all-{cnn.__class__.__name__}-{lr}.png'))
+        plt.xscale('log')
+        plt.yscale('log')
+        ax.legend(loc='lower right')
+        ax.text(0.05, 0.95, f'R^2: {R_squared_all:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Log_results/Truth_vs_Predicted-all-logarithmic-{cnn.__class__.__name__}-{lr}.png'))
+
+        # Visualize the ground truth on x axis and predicted values on y axis
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
+        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.set_xlabel('Ground Truth')
+        ax.set_ylabel('Predicted')
+        ax.set_title('Ground Truth vs Predicted Values')
+        plt.xscale('log')
+        plt.yscale('log')
+        ax.legend(loc='lower right')
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Log_results/Truth_vs_Predicted-test-logarithmic-{cnn.__class__.__name__}-{lr}.png'))
+
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.scatter(all_targets, all_predictions, color='blue', label='Predictions')
+        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.set_xlabel('Ground Truth')
+        ax.set_ylabel('Predicted')
+        ax.set_title('Ground Truth vs Predicted Values')
+        ax.legend(loc='lower right')
+        ax.text(0.05, 0.95, f'R^2: {R_squared_all:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Normal_results/Truth_vs_Predicted-all-{cnn.__class__.__name__}-{lr}.png'))
         
 
         # Visualize the ground truth on x axis and predicted values on y axis
@@ -286,12 +311,13 @@ for cnn in [NoPoolCNN1().to(my_device)]:
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
-        ax.legend()
-        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.2f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Ground_Truth_vs_Predicted-test-{cnn.__class__.__name__}-{lr}.png'))
+        ax.legend(loc='lower right')
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Normal_results/Truth_vs_Predicted-test-{cnn.__class__.__name__}-{lr}.png'))
         plt.close('all')
 
         # Free up memory to avoid 'CUDA out of memory' error when moving from one iteration to the next
+        cnn.to(my_device)
         del test_inputs
         del data_images_np
         del data_images_tensor
@@ -302,4 +328,5 @@ for cnn in [NoPoolCNN1().to(my_device)]:
         del R_squared_all
         del R_squared_test
         torch.cuda.empty_cache()
-        cnn = cnn.to(my_device) 
+    time_end = time.time()
+    print(f'Time taken for {cnn.__class__.__name__}: {time_end - start_time} seconds')
