@@ -14,7 +14,7 @@ for i in range(800, 900, 100):
 
         #im = ps.generators.blobs(shape = [i, i], porosity = 0.55, blobiness = 10, seed=14341)
         script_dir = os.path.dirname(__file__)
-        image_path = os.path.join(script_dir, 'Synthetic_Image_Analysis', 'pf_0.500_triangle_Model_1.png')
+        image_path = os.path.join(script_dir, 'Synthetic_Image_Analysis', 'pf_0.100_triangle_Model_2.png')
         im = plt.imread(image_path)
         im = im[:, :, 0]
         im = np.invert(im.astype(bool))
