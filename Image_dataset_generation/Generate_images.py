@@ -29,7 +29,7 @@ def read_circle_data(file_path):
             y_coord = np.append(y_coord, [y])
             radii = np.append(radii, [radius])
 
-def generate_image(image_name, image_shape=(10000, 10000)):
+def generate_image(image_name, image_shape):
     # Create a blank binary image
     image = np.zeros(image_shape, dtype=np.uint8)
 
@@ -60,7 +60,7 @@ def generate_image(image_name, image_shape=(10000, 10000)):
         # image = image[:half_height, :half_width]
 
         image_name = image_name.split('.png')[0]
-        plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
+        plt.imsave(f'{current_directory}/Full_Images_1000-10000/pf_{packing_fraction}_circle_{model_name}_resolution_{image_shape}.png', image, cmap='gray')
         image = np.zeros(image_shape, dtype=np.uint8)
 
     for i in range(nr_circles):
@@ -72,7 +72,7 @@ def generate_image(image_name, image_shape=(10000, 10000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Full_Images_1000-10000/pf_{packing_fraction}_ellipse_{model_name}_resolution_{image_shape}.png', image, cmap='gray')
 
     image = np.zeros(image_shape, dtype=np.uint8)
     for i in range(nr_circles):
@@ -96,7 +96,7 @@ def generate_image(image_name, image_shape=(10000, 10000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Full_Images_1000-10000/pf_{packing_fraction}_rectangle_{model_name}_resolution_{image_shape}.png', image, cmap='gray')
 
     # Generate isosceles triangle within the ellipse
     image = np.zeros(image_shape, dtype=np.uint8)
@@ -123,7 +123,7 @@ def generate_image(image_name, image_shape=(10000, 10000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_10000x10000/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Full_Images_1000-10000/pf_{packing_fraction}_triangle_{model_name}_resolution_{image_shape}.png', image, cmap='gray')
 
 Models = np.arange(2, 3, 1)
 pfs = ['0.1']
@@ -136,7 +136,8 @@ for model in Models:
         input_file = f'Model_{model}_pf_{pf}00.txt'
         circles = read_circle_data(f'{current_directory}/Circle_data_porespy/{input_file}')
         input_file = input_file.split('.t')[0]
-        generate_image(image_name=f'{input_file}.png')
+        for i in range(1, 11):
+            generate_image(image_name=f'{input_file}.png', image_shape=(i*1000, i*1000))
         # print("New Image Generated")
         # Empty the arrays for the next iteration
         x_coord = np.array([])
