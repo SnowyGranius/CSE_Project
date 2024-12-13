@@ -4,7 +4,10 @@ import os
 from scipy.interpolate import griddata
 import numpy as np
 from scipy.optimize import curve_fit
+import sys
 import matplotlib.pyplot as plt
+
+many_plots = False
 
 # Load the CSV file
 # csv_file_path = 'Microstructure_generation\microstructure_data.csv'
@@ -22,8 +25,9 @@ seed=data['Seed']
 
 ###--------------DATA FILTERING---------------###
 # Filter data for the first 1 seeds
-filtered_data = data[data['Seed'].isin(data['Seed'].unique()[:10])]  #CHANGE THE SLICING TO INCLUDE ALL POINTS
 
+filtered_data = data[data['Seed'].isin(data['Seed'].unique()[:10])]  #CHANGE THE SLICING TO INCLUDE ALL POINTS
+# filtered_data = data[data['Seed'] == data['Seed'].unique()[0]]
 
 # Create a 3D plot with all the points
 fig = plt.figure()
@@ -34,15 +38,16 @@ M0_filtered = filtered_data['M0']
 M1_filtered = filtered_data['M1']
 M2_filtered = filtered_data['M2']
 seed_filtered = filtered_data['Seed']
+blobiness_value = filtered_data['Blobiness']
 
 # Plot the filtered data
-scatter = ax.scatter(M0_filtered, M1_filtered, M2_filtered, c=seed_filtered, marker='o')
+scatter = ax.scatter(M0_filtered, M1_filtered, M2_filtered, c=blobiness_value, cmap='plasma', marker='o')
 ax.set_xlabel('M0')
 ax.set_ylabel('M1')
 ax.set_zlabel('M2')
 ax.set_title('3D Plot of M0, M1, and M2 for 10 seeds')
 cbar = plt.colorbar(scatter, ax=ax)
-cbar.set_label('Seed')
+cbar.set_label('Blobiness')
 plt.show()
 
 
@@ -79,7 +84,6 @@ ax.plot_surface(grid_x, grid_y, grid_z, cmap='viridis', alpha=0.6)
 # Plot the original data points
 modified_plot=ax.scatter(M0, M1, M2, c=seed, marker='o')
 
-
 # Set labels
 ax.set_xlabel('M0')
 ax.set_ylabel('M1')
@@ -92,43 +96,42 @@ cbar.set_label('Seed')
 plt.show()
 
 
+if many_plots:
+    # -----------------3D PLOTS-----------------#
+    # Create many 3D plots and iterate through the blobiness values
+    for i in range (1, 11):
+        # Create a 3D plot
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        # Filter data for a specific blobiness value
+        blobiness_value = i  # Change this to the desired blobiness value
+        filtered_data = data[data['Blobiness'] == blobiness_value]
 
+        # Extract M0, M1, and M2 columns for the filtered data
+        M0_filtered = filtered_data['M0']
+        M1_filtered = filtered_data['M1']
+        M2_filtered = filtered_data['M2']
+        seed_filtered = filtered_data['Seed']
 
-# Create many 3D plots and iterate through the blobiness values
-for i in range (1, 11):
-    # Create a 3D plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    # Filter data for a specific blobiness value
-    blobiness_value = i  # Change this to the desired blobiness value
-    filtered_data = data[data['Blobiness'] == blobiness_value]
+        # Plot the filtered data
+        scatter = ax.scatter(M0_filtered, M1_filtered, M2_filtered, c=seed_filtered, marker='o')
 
-    # Extract M0, M1, and M2 columns for the filtered data
-    M0_filtered = filtered_data['M0']
-    M1_filtered = filtered_data['M1']
-    M2_filtered = filtered_data['M2']
-    seed_filtered = filtered_data['Seed']
+        # Set labels
+        ax.set_xlabel('M0')
+        ax.set_ylabel('M1')
+        ax.set_zlabel('M2')
 
-    # Plot the filtered data
-    scatter = ax.scatter(M0_filtered, M1_filtered, M2_filtered, c=seed_filtered, marker='o')
+        #set maximum bounds
+        ax.set_xlim([data['M0'].min(), data['M0'].max()])
+        ax.set_ylim([data['M1'].min(), data['M1'].max()])
+        ax.set_zlim([data['M2'].min(), data['M2'].max()])
 
-    # Set labels
-    ax.set_xlabel('M0')
-    ax.set_ylabel('M1')
-    ax.set_zlabel('M2')
+        # Set title
+        ax.set_title(f'3D Plot of M0, M1, and M2 for Blobiness {blobiness_value}')
 
-    #set maximum bounds
-    ax.set_xlim([data['M0'].min(), data['M0'].max()])
-    ax.set_ylim([data['M1'].min(), data['M1'].max()])
-    ax.set_zlim([data['M2'].min(), data['M2'].max()])
+        # Add colorbar
+        cbar = plt.colorbar(scatter, ax=ax)
+        cbar.set_label('Seed')
 
-    # Set title
-    ax.set_title(f'3D Plot of M0, M1, and M2 for Blobiness {blobiness_value}')
-
-    # Add colorbar
-    cbar = plt.colorbar(scatter, ax=ax)
-    cbar.set_label('Seed')
-
-    # Show the plot
-    plt.show()
-    
+        # Show the plot
+        plt.show()
