@@ -37,6 +37,7 @@ def generate_image(image_name, image_shape=(2000, 2000)):
     model_name = re.search(r'Model_\d+', image_name).group()
 
     # Create scalers to scale the coordinates to the image size
+    print(x_coord)
     x_min = np.min(x_coord)
     x_max = np.max(x_coord)
     y_min = np.min(y_coord)
@@ -59,8 +60,10 @@ def generate_image(image_name, image_shape=(2000, 2000)):
         # half_width = image_shape[1] // 2
         # image = image[:half_height, :half_width]
 
+        if not os.path.exists(f'{current_directory}/Converge-study-{image_shape[0]}'):
+            os.makedirs(f'{current_directory}/Converge-study-{image_shape[0]}')
         image_name = image_name.split('.png')[0]
-        plt.imsave(f'{current_directory}/Full_Images_Double/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
+        plt.imsave(f'{current_directory}/Converge-study-{image_shape[0]}/pf_{packing_fraction}_circle_{model_name}.png', image, cmap='gray')
         image = np.zeros(image_shape, dtype=np.uint8)
 
     for i in range(nr_circles):
@@ -72,7 +75,7 @@ def generate_image(image_name, image_shape=(2000, 2000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_Double/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Converge-study-{image_shape[0]}/pf_{packing_fraction}_ellipse_{model_name}.png', image, cmap='gray')
 
     image = np.zeros(image_shape, dtype=np.uint8)
     for i in range(nr_circles):
@@ -96,7 +99,7 @@ def generate_image(image_name, image_shape=(2000, 2000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_Double/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
+    plt.imsave(f'{current_directory}/Converge-study-{image_shape[0]}/pf_{packing_fraction}_rectangle_{model_name}.png', image, cmap='gray')
 
     # Generate isosceles triangle within the ellipse
     image = np.zeros(image_shape, dtype=np.uint8)
@@ -123,7 +126,8 @@ def generate_image(image_name, image_shape=(2000, 2000)):
     # image = image[:half_height, :half_width]
 
     image_name = image_name.split('.png')[0]
-    plt.imsave(f'{current_directory}/Full_Images_Double/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
+    # create the folder if it does not exist
+    plt.imsave(f'{current_directory}/Converge-study-{image_shape[0]}/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
 
 Models = np.arange(1, 26, 1)
 pfs = ['0.1', '0.2', '0.3', '0.4', '0.5']
@@ -136,9 +140,10 @@ for model in Models:
         input_file = f'Model_{model}_pf_{pf}00.txt'
         circles = read_circle_data(f'{current_directory}/Circle_data_porespy/{input_file}')
         input_file = input_file.split('.t')[0]
-        generate_image(image_name=f'{input_file}.png')
-        # print("New Image Generated")
-        # Empty the arrays for the next iteration
+        for image_shape in [(100, 100), (200, 200), (300, 300), (400, 400), (500, 500), (600, 600), (700, 700), (800, 800), (900, 900), (1000, 1000)]:
+            generate_image(image_name=f'{input_file}.png', image_shape=image_shape)
+            # print("New Image Generated")
+            # Empty the arrays for the next iteration
         x_coord = np.array([])
         y_coord = np.array([])
         radii = np.array([])

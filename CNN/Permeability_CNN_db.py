@@ -8,7 +8,7 @@ import sys
 import glob
 import re
 from sklearn.model_selection import train_test_split
-from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4
+from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4, NoPoolCNN5
 import time
 
 # Default dype is float64. Not working currently on DelftBlue
@@ -35,7 +35,7 @@ all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
 all_csv.sort()
 
 for file in all_csv:
-    if 'circle' in file:
+    if 'circle' in file or 'ellipse' in file or 'triangle' in file or 'rectangle' in file:
         with open(file, 'r') as f:
             lines = f.readlines()
             headers = lines[0].strip().split(',')
@@ -45,10 +45,13 @@ for file in all_csv:
                 for header, value in zip(headers, row):
                     df[header].append(float(value) if header == 'Permeability' else value)
         packing_fraction = re.search(r'\d.\d+', file).group()
-        shape = re.search(r'circle|ellipse|trinagle|rectangle', file).group()
+        shape = re.search(r'circle|ellipse|triangle|rectangle', file).group()
         df['Packing_Fraction'] = packing_fraction
         df['Shape'] = shape
-        df['Model'] = list(range(1, len(df['Permeability'])))  # Model number is one higher than the index of the dataframe
+        df['Model'] = list(range(1, len(df['Permeability'])+1))  # Model number is one higher than the index of the dataframe
+        # Delete the first row of the dataframe without using pandas
+        for key in df.keys():
+            df[key] = df[key][1:]
         data_csv.append(df)
 
 permeability_values = []
@@ -71,7 +74,7 @@ all_images = glob.glob(os.path.join(image_directory, "*.png"))
 all_images.sort()
 
 for image_file in all_images:
-    match = re.search(r'pf_(\d\.\d+)_(circle)_Model_(\d+)\.png', image_file)
+    match = re.search(r'pf_(\d\.\d+)_(circle|ellipse|triangle|rectangle)_Model_(\d+)\.png', image_file)
     if match:
         packing_fraction = float(match.group(1))
         shape = match.group(2)
@@ -82,11 +85,15 @@ for image_file in all_images:
             image = image[:, :, 0]  # Take only the first channel
         
         data_images.append({
-            # 'Model': model_number,
+            'Model': model_number,
             # 'Packing_Fraction': packing_fraction,
             # 'Shape': shape,
             'Image': image
         })
+        # Delete images that have a model number = 1
+        if model_number == 1:
+            data_images.pop()
+            continue
 
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 print(f'Number of images: {len(data_images)}')
@@ -110,7 +117,6 @@ class PermeabilityDataset(torch.utils.data.Dataset):
 
 
 # Splitting the data into training, testing (and validation) sets
-
 if validation:
     train_images, dummy_images, train_permeability, dummy_permeability = train_test_split(
         data_images, permeability_values, test_size=0.30, random_state=42)
@@ -137,7 +143,7 @@ if validation:
 
 
 # Initialize the dataloader using batch size hyperparameter
-batch_size = int(len(train_permeability)/2)
+batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
 loss_function = nn.MSELoss()
@@ -146,11 +152,12 @@ def reset_weights(m):
     if isinstance(m, (nn.Linear, nn.Conv2d)):  # Include other layers if needed
         m.reset_parameters()
 
-for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my_device), NoPoolCNN2().to(my_device), NoPoolCNN3().to(my_device), NoPoolCNN4().to(my_device)]:
+for cnn in [NoPoolCNN2().to(my_device)]:
     start_time = time.time()
-    for lr in [1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1]:
+    for lr in [5e-5, 1e-4, 5e-4, 1e-3]:
         cnn.apply(reset_weights)
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
+
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
         loss_per_epoch = []
@@ -158,7 +165,6 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
 
         n_epochs = 50
 
-        
         # Run the training loop
         for epoch in range(0, n_epochs): # n_epochs at maximum
 
@@ -207,7 +213,7 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
             loss_per_epoch.append(np.mean(loss_per_batch))
             
             R_squared_per_epoch.append(np.mean(R_squared_per_batch))
-            #print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
+            print(f'\tAfter epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
             
         print('Training process has finished.')
 
@@ -228,62 +234,39 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
         axs[1].legend(loc='lower right')
         plt.suptitle('Loss and training R squared curves during training', y=0.92)
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Evolution/Loss_R_squared-{cnn.__class__.__name__}-{lr}.png'))
-
-        # Evaluate model
+        
+        # Evaluate model and clear cache
         cnn.eval()
-
         torch.cuda.empty_cache()
 
         with torch.no_grad():
-            test_inputs = dataset_test.X.to('cpu')
-            cnn = cnn.to('cpu')
+            test_inputs = dataset_test.X.to(my_device)
             test_predictions = cnn(test_inputs).cpu().numpy()
-            data_images_np = np.array(data_images)
-            data_images_tensor = torch.tensor(data_images_np).unsqueeze(1).to('cpu')
-            all_predictions = cnn(data_images_tensor).cpu().numpy()
+            # all_inputs = torch.cat((dataset_train.X.to(my_device), dataset_test.X.to(my_device)), dim=0)
+            # all_predictions = cnn(all_inputs).cpu().numpy()
+            #data_images_np = np.array(data_images)
+            #data_images_tensor = torch.tensor(data_images_np).unsqueeze(1).to('cpu')
+            #all_predictions = cnn(data_images_tensor).cpu().numpy()
 
-
-        # test_predictions = outputs_test.cpu().numpy()
         test_predictions = test_predictions * std_permeability + mean_permeability
         test_predictions = test_predictions.reshape(-1)
         test_targets = np.array(dataset_test.y) * std_permeability + mean_permeability
-        # all_predictions = outputs_all.cpu().numpy()
-        all_predictions = all_predictions * std_permeability + mean_permeability
-        all_predictions = all_predictions.reshape(-1)
-        all_targets = permeability_values
+        # all_predictions = all_predictions * std_permeability + mean_permeability
+        # all_predictions = all_predictions.reshape(-1)
+        # all_targets = permeability_values
 
         # compute the test R squared
         ss_residual = np.sum((test_targets - test_predictions)**2)
         ss_total = np.sum((test_targets - np.mean(test_targets))**2)
         R_squared_test = 1 - (ss_residual / ss_total)
         
-        # Ensure all_targets and all_predictions have the same length
-        if len(all_targets) != len(all_predictions):
-            raise ValueError("Length of all_targets and all_predictions must be the same")
 
-        # Compute the residual sum of squares and total sum of squares
-        ss_residual = np.sum((all_targets - all_predictions)**2)
-        ss_total = np.sum((all_targets - np.mean(all_targets))**2)
-        R_squared_all = 1 - (ss_residual / ss_total)
-    
-
-        # Visualize the ground truth on x axis and predicted values on y axis
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.scatter(all_targets, all_predictions, color='blue', label='Predictions')
-        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
-        ax.set_xlabel('Ground Truth')
-        ax.set_ylabel('Predicted')
-        ax.set_title('Ground Truth vs Predicted Values')
-        plt.xscale('log')
-        plt.yscale('log')
-        ax.legend(loc='lower right')
-        ax.text(0.05, 0.95, f'R^2: {R_squared_all:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Log_results/Truth_vs_Predicted-all-logarithmic-{cnn.__class__.__name__}-{lr}.png'))
-
+        
+        
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
-        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
@@ -292,22 +275,11 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
         ax.legend(loc='lower right')
         ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Log_results/Truth_vs_Predicted-test-logarithmic-{cnn.__class__.__name__}-{lr}.png'))
-
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.scatter(all_targets, all_predictions, color='blue', label='Predictions')
-        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
-        ax.set_xlabel('Ground Truth')
-        ax.set_ylabel('Predicted')
-        ax.set_title('Ground Truth vs Predicted Values')
-        ax.legend(loc='lower right')
-        ax.text(0.05, 0.95, f'R^2: {R_squared_all:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Normal_results/Truth_vs_Predicted-all-{cnn.__class__.__name__}-{lr}.png'))
         
-
         # Visualize the ground truth on x axis and predicted values on y axis
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
-        ax.plot([all_targets.min(), all_targets.max()], [all_targets.min(), all_targets.max()], 'k--', lw=2, label='Ideal')
+        ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
         ax.set_title('Ground Truth vs Predicted Values')
@@ -317,16 +289,13 @@ for cnn in [BasicCNN().to(my_device), MLPCNN().to(my_device), NoPoolCNN1().to(my
         plt.close('all')
 
         # Free up memory to avoid 'CUDA out of memory' error when moving from one iteration to the next
-        cnn.to(my_device)
+        #cnn.to(my_device)
         del test_inputs
-        del data_images_np
-        del data_images_tensor
         del test_predictions
         del test_targets
-        del all_predictions
-        del all_targets
-        del R_squared_all
         del R_squared_test
         torch.cuda.empty_cache()
+
+
     time_end = time.time()
     print(f'Time taken for {cnn.__class__.__name__}: {time_end - start_time} seconds')
