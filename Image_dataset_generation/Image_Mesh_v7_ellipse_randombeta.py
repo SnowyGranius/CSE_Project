@@ -1,4 +1,5 @@
 import gmsh, numpy as np, random
+import os
 
 def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=1, size=100, beta=0, random_beta='no'):
     """
@@ -28,9 +29,9 @@ def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=1, s
     distance_min = 2            #Minimum distance of the transition field between large elements and small elements
     
     if shape == 'circle' or shape == 'ellipse':
-        shapes = np.genfromtxt('%s/Circle_data/%s_centers.txt' % (path, name))
+        shapes = np.genfromtxt('%s\Circle_data\%s_centers.txt' % (path, name))
     else:
-        shapes = np.genfromtxt('%s/Polygon_data/%s_centers.txt' % (path, name))
+        shapes = np.genfromtxt('%s\Polygon_data\%s_centers.txt' % (path, name))
         
     #Inlcude all the shapes, create shape, add loop and surface to make them 2D for cutting them later
     c, w, s = [], [], []
@@ -175,5 +176,17 @@ def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=1, s
     
     #Generate and save mesh
     gmsh.model.mesh.generate()
-    gmsh.write('%s/Meshes/%s_%s_res_%s_3_mesh_2d.msh' %(path, name, shape, resolution))
+    gmsh.write('%s\Meshes\%s_%s_res_%s_3_mesh_2d.msh' %(path, name, shape, resolution))
     gmsh.finalize()
+
+current_path=os.path.dirname(__file__)
+path=os.path.join(current_path)
+name='Model_1_pf_0.070_rad_0.005'
+resolution=0.01
+shape='ellipse'
+phi=0.785
+hl_ratio=1
+size=100
+beta=0
+random_beta='no'
+Model_gmsh(path, name, resolution, shape, phi, hl_ratio, size, beta, random_beta)
