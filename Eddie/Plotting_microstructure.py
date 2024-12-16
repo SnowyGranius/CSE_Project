@@ -45,7 +45,7 @@ scatter = ax.scatter(M0_filtered, M1_filtered, M2_filtered, c=blobiness_value, c
 ax.set_xlabel('M0')
 ax.set_ylabel('M1')
 ax.set_zlabel('M2')
-ax.set_title('3D Plot of M0, M1, and M2 for 10 seeds')
+ax.set_title('3D Plot of M0, M1, and M2 for 10 different blobiness values')
 cbar = plt.colorbar(scatter, ax=ax)
 cbar.set_label('Blobiness')
 plt.show()
