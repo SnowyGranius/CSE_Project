@@ -78,10 +78,10 @@ for path in pathlist:
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=1234)
             
     #RBF kernel
-    K = C(1.0, (1e-3, 1e3)) * RBF(length_scale=np.ones(X_train.shape[1]), length_scale_bounds=(0.001, 10)) 
+    K = C(1.0, (1e-3, 1e3)) * RBF(length_scale=np.ones(X_train.shape[1]), length_scale_bounds=(0.001, 10000)) 
     
     #Matern kernel
-    K_matern = C(1.0, (1e-3, 1e3)) * Matern(length_scale=np.ones(X_train.shape[1]), length_scale_bounds=(0.001, 10), nu=1.5) 
+    K_matern = C(1.0, (1e-3, 1e3)) * Matern(length_scale=np.ones(X_train.shape[1]), length_scale_bounds=(0.001, 10000), nu=1.5) 
     
     #Radial quadratic kernel
     K_rq = C(1.0) * RationalQuadratic(length_scale=10.0, alpha=1.5)
