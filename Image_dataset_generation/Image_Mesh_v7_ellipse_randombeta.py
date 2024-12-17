@@ -173,6 +173,7 @@ def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=0.5,
     gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
     gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
     gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+    gmsh.option.setNumber("General.Terminal", 0)
     
     #Generate and save mesh
     gmsh.model.mesh.generate()
@@ -181,7 +182,6 @@ def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=0.5,
 
 current_path=os.path.dirname(__file__)
 path=os.path.join(current_path)
-name='Model_2_pf_0.100'
 resolution=0.01
 shape='ellipse'
 phi=0.785
@@ -189,4 +189,7 @@ hl_ratio=0.5
 size=100
 beta=0
 random_beta='no'
-Model_gmsh(path, name, resolution, shape, phi, hl_ratio, size, beta, random_beta)
+for j in range(1, 26):
+    for i in np.arange(0.1, 1.1, 0.1):
+        name=f'Model_{j}_pf_{i}00'
+        Model_gmsh(path, name, resolution, shape, phi, hl_ratio, size, beta, random_beta)
