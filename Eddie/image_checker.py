@@ -19,7 +19,7 @@ def reconstruct_image(lines):
 script_dir = os.path.dirname(__file__) # <-- absolute dir the script is in
 base_path=script_dir
 sub_path='DAT_files'
-folder='blobiness_10.0_porosity_0.55_14341'
+folder='blobiness_10.0_porosity_0.7277777777777777_37501'
 
 path=os.path.join(base_path, sub_path, folder)
 file_to_read='subimage_0_0.dat'
@@ -59,6 +59,7 @@ for i in range(rows):
 plt.imshow(large_image, cmap='gray')
 plt.title(f'{folder}')
 plt.show()
+
 
 
 

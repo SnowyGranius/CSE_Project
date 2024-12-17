@@ -1,7 +1,7 @@
 import gmsh, numpy as np, random
 import os
 
-def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=1, size=100, beta=0, random_beta='no'):
+def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=0.5, size=100, beta=0, random_beta='no'):
     """
     This function meshes a random packing
 
@@ -29,7 +29,7 @@ def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=1, s
     distance_min = 2            #Minimum distance of the transition field between large elements and small elements
     
     if shape == 'circle' or shape == 'ellipse':
-        shapes = np.genfromtxt('%s\Circle_data\%s_centers.txt' % (path, name))
+        shapes = np.genfromtxt('%s\Circle_data_porespy\%s.txt' % (path, name))
     else:
         shapes = np.genfromtxt('%s\Polygon_data\%s_centers.txt' % (path, name))
         
@@ -59,7 +59,7 @@ def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=1, s
                             beta = 2*np.pi * random.uniform(0, 1)
                     
                     j = j+1
-                    c.append(gmsh.model.occ.addEllipse(shapes[i,0], shapes[i,1], shapes[i,2], shapes[i,3], shapes[i,3]*hl_ratio, zAxis=[0, 0, 1], xAxis=[1, np.tan(beta), 0]))
+                    c.append(gmsh.model.occ.addEllipse(shapes[i,0], shapes[i,1], shapes[i,2], shapes[i,3], shapes[i,3]*hl_ratio, zAxis=[0, 0, 1], xAxis=[0, 1, 0]))
                     w.append(gmsh.model.occ.addCurveLoop([c[j]]))
                     s.append(gmsh.model.occ.add_plane_surface([w[j]]))
                 
@@ -181,11 +181,11 @@ def Model_gmsh(path, name, resolution, shape='ellipse', phi=0.785, hl_ratio=1, s
 
 current_path=os.path.dirname(__file__)
 path=os.path.join(current_path)
-name='Model_1_pf_0.070_rad_0.005'
+name='Model_2_pf_0.100'
 resolution=0.01
 shape='ellipse'
 phi=0.785
-hl_ratio=1
+hl_ratio=0.5
 size=100
 beta=0
 random_beta='no'

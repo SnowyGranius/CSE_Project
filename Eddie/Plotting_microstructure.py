@@ -42,12 +42,18 @@ blobiness_value = filtered_data['Blobiness']
 
 # Plot the filtered data
 scatter = ax.scatter(M0_filtered, M1_filtered, M2_filtered, c=blobiness_value, cmap='plasma', marker='o')
-ax.set_xlabel('M0')
-ax.set_ylabel('M1')
-ax.set_zlabel('M2')
-ax.set_title('3D Plot of M0, M1, and M2 for 10 different blobiness values')
+ax.set_xlabel('M0', fontsize=22, labelpad=28)
+ax.set_ylabel('M1', fontsize=22, labelpad=28)
+ax.set_zlabel('M2', fontsize=22, labelpad=30)
+ax.set_title('3D Plot of M0, M1, and M2 for 10 different blobiness values', fontsize=22)
 cbar = plt.colorbar(scatter, ax=ax)
-cbar.set_label('Blobiness')
+cbar.ax.tick_params(labelsize=22)
+cbar.set_label('Blobiness', fontsize=22)
+# Set the size of the font on the axes and move them slightly outwards
+ax.tick_params(axis='x', labelsize=22, pad=18)
+ax.tick_params(axis='y', labelsize=22, pad=18)
+ax.tick_params(axis='z', labelsize=22, pad=18)
+
 plt.show()
 
 

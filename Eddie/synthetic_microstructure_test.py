@@ -75,6 +75,27 @@ def array_creation():
             M2_values[k, (i // 1000) - 1] = M2
     return M0_values, M1_values, M2_values
 
+im1=ps.generators.blobs(shape = [1000, 1000], porosity = 0.75, blobiness = 5, seed=14341)
+im2=ps.generators.blobs(shape = [1000, 1000], porosity = 0.75, blobiness = 10, seed=14341)
+im3=ps.generators.blobs(shape = [1000, 1000], porosity = 0.75, blobiness = 15, seed=14341)
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+axes[0].imshow(im1, cmap='gray', interpolation='none')
+axes[0].axis('off')
+axes[0].set_title('(a)', fontsize=22)
+
+axes[1].imshow(im2, cmap='gray', interpolation='none')
+axes[1].axis('off')
+axes[1].set_title('(b)', fontsize=22)
+
+axes[2].imshow(im3, cmap='gray', interpolation='none')
+axes[2].axis('off')
+axes[2].set_title('(c)', fontsize=22)
+
+plt.show()
+
+
+
 '''
 script_dir = os.path.dirname(__file__)
 base_path=script_dir

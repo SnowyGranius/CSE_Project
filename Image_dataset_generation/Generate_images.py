@@ -126,7 +126,7 @@ def generate_image(image_name, image_shape):
     plt.imsave(f'{current_directory}/Full_Images_1000x1000/pf_{packing_fraction}_triangle_{model_name}_resolution_{image_shape}.png', image, cmap='gray')
 
 Models = np.arange(2, 3, 1)
-pfs = ['0.1']
+pfs = ['0.4']
 # Models = range(1, 26)
 # pfs = np.arange(1, 11, 1) / 10
 # print(pfs)
