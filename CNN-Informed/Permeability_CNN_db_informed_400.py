@@ -36,6 +36,7 @@ data_images = []
 all_csv = glob.glob(os.path.join(csv_directory, "*.csv"))
 all_csv.sort()
 
+# Reading all entries (circles, ellipses, triangles, rectangles) from the csv files, except model 1 which gives eronous results
 for file in all_csv:
     if 'circle' in file or 'ellipse' in file or 'triangle' in file or 'rectangle' in file:
         with open(file, 'r') as f:
@@ -75,10 +76,10 @@ surface_values = np.array(surface_values)
 euler_total_values = np.array(euler_total_values)
 
 minkowski_values = np.column_stack((porosity_values, surface_values, euler_total_values))
+# permeability_minkowski stores the permeability values and the Minkowski functionals for all entris
 permeability_minkowski = np.column_stack((permeability_values, minkowski_values))
 
 # Read images from the folder
-# Converge-study-{image_size}
 image_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0]))), f'Image_dataset_generation/Converge-study-{image_size}')
 if not os.path.exists(image_directory):
     raise FileNotFoundError(f"Directory {image_directory} does not exist.")
@@ -108,10 +109,11 @@ for image_file in all_images:
             data_images.pop()
             continue
 
+# Transform the images to numpy arrays containing 0's and 1's
 data_images = [np.array(image['Image'], dtype=np.float64) for image in data_images]
 print(f'Number of images: {len(data_images)}')
 
-# Define the dataset class
+# Define the dataset class that converts to torch tensors
 class PermeabilityDataset(torch.utils.data.Dataset):
     '''
     Permeability dataset class for regression, with Minkowski variables.
@@ -146,7 +148,7 @@ else:
         data_images, permeability_minkowski, test_size=0.30, random_state=42)
 
 
-# Normalizing the training permeability and minkowski values using StandardScaler()
+# Normalizing the training permeability and Minkowski values using StandardScaler()
 scaler_permeability = StandardScaler()
 scaler_porosity = StandardScaler()
 scaler_surface = StandardScaler()
@@ -184,12 +186,16 @@ if validation:
 batch_size = 32
 trainloader = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=0)
 
+# Define the loss function
 loss_function = nn.MSELoss()
 
+# Function that resets the weights of the model at each iteration (when running on DelftBlue, 
+    # the model seems to be memorized from one learning rate to the next and gives optimistic results)
 def reset_weights(m):
     if isinstance(m, (nn.Linear, nn.Conv2d)):  # Include other layers if needed
         m.reset_parameters()
 
+# Training loop
 for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN13().to(my_device)]:
     start_time = time.time()
     lr_list = [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
@@ -197,6 +203,7 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
         cnn.apply(reset_weights)
         print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
 
+        # Define the optimizer
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
 
         loss_per_epoch = []
@@ -254,25 +261,30 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
                 R_squared_per_batch.append(R_squared.item())
                 
 
-            # Log loss value per epoch
+            # Training loss and training R squared per epoch
             epoch_loss = np.mean(loss_per_batch)
             loss_per_epoch.append(epoch_loss)
             R_squared_per_epoch.append(np.mean(R_squared_per_batch))
             print(f'After epoch {epoch+1}: Loss = {loss_per_epoch[epoch]}, R-squared = {R_squared_per_epoch[epoch]}')
             
+            # Validation loss and validation R squared per epoch - this is preferred over loss and R squared on the training set
             if validation:
                 val_loss_per_batch = []
                 val_R_squared_per_batch = []
+                # cnn.eval() ???
                 with torch.no_grad():
                     for val_data in torch.utils.data.DataLoader(dataset_val, batch_size=batch_size, shuffle=False, num_workers=0):
+                        # Get and prepare inputs by converting to floats
                         val_inputs, val_minkowski, val_targets = val_data
                         val_inputs = val_inputs.to(my_device)
                         val_minkowski = val_minkowski.to(my_device)
                         val_targets = val_targets.to(my_device)
 
+                        # Perform forward pass
                         val_outputs = cnn(val_inputs, val_minkowski)
                         val_outputs = val_outputs.squeeze()
 
+                        # Compute loss and R squared
                         val_loss = loss_function(val_outputs, val_targets)
                         val_ss_residual = torch.sum((val_targets - val_outputs)**2)
                         val_ss_total = torch.sum((val_targets - torch.mean(val_targets))**2)
@@ -281,12 +293,14 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
                         val_loss_per_batch.append(val_loss.item())
                         val_R_squared_per_batch.append(val_R_squared.item())
 
+                # Validation loss and validation R squared per epoch
                 val_epoch_loss = np.mean(val_loss_per_batch)
                 val_loss_per_epoch.append(val_epoch_loss)
                 val_R_squared_per_epoch.append(np.mean(val_R_squared_per_batch))
                 print(f'\tValidation Loss = {val_loss_per_epoch[epoch]}, Validation R-squared = {val_R_squared_per_epoch[epoch]}')
 
-            # Save the best model based on validation loss if validation is used, otherwise based on training loss
+            # Save the best model based on validation loss if validation is used, otherwise based on training loss.
+                # If validation is not used, the model is saved based on the training loss - not recommended
             if validation:
                 if val_epoch_loss < best_loss:
                     best_loss = val_epoch_loss
@@ -298,6 +312,7 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
             
         print('Training process has finished.\n')
 
+        # Plot the loss and R squared curves on training and validation sets
         fig, axs = plt.subplots(2,1,figsize=(8,8))
 
         axs[0].plot(np.arange(1,len(loss_per_epoch)+1), loss_per_epoch, color='blue', label='Training loss', marker='.')
@@ -326,6 +341,7 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
         cnn.eval()
         torch.cuda.empty_cache()
 
+        # Evaluate the model on the test set
         with torch.no_grad():
             test_inputs = dataset_test.X.to(my_device)
             test_minkowski = dataset_test.minkowski.to(my_device)
@@ -334,13 +350,13 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
         test_predictions = scaler_permeability.inverse_transform(test_predictions.reshape(-1, 1)).reshape(-1)
         test_targets = scaler_permeability.inverse_transform(np.array(dataset_test.y).reshape(-1, 1)).reshape(-1)
 
-        # compute the test R squared
+        # Compute the test R squared
         ss_residual = np.sum((test_targets - test_predictions)**2)
         ss_total = np.sum((test_targets - np.mean(test_targets))**2)
         R_squared_test = 1 - (ss_residual / ss_total)
         
         
-        # Visualize the ground truth on x axis and predicted values on y axis
+        # Visualize the ground truth on x axis and predicted values on y axis - logarithmic scale
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
         ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
@@ -354,7 +370,7 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
         os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Log_results'), exist_ok=True)
         plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Log_results/Truth_vs_Predicted-test-logarithmic-{cnn.__class__.__name__}-{lr}.png'))
         
-        # Visualize the ground truth on x axis and predicted values on y axis
+        # Visualize the ground truth on x axis and predicted values on y axis - normal scale
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.scatter(test_targets, test_predictions, color='blue', label='Predictions')
         ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
