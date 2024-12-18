@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 
+# DIFFERENT KERNEL SIZES
 
 class NoPoolCNN1(nn.Module): # first attempt at a no pooling CNN - 64 feature maps
     def __init__(self):
@@ -33,14 +34,17 @@ class NoPoolCNN1(nn.Module): # first attempt at a no pooling CNN - 64 feature ma
             
 
             nn.Flatten(),
-            nn.Linear(3136, 200), # 4 = 3136, 5 = 4096, 6 = 6400, 7 = 7744, 8 = 10816, 9 = 14400, 10 = 16384
+            nn.Linear(3136, 200), # 4 = 3136*2, 5 = 4096*2, 6 = 6400*2, 7 = 7744*2, 8 = 10816*2, 9 = 14400*2, 10 = 16384*2
             nn.ReLU(),
             nn.Linear(200, 10),
+            # activation
             nn.Linear(10, 1)
         )
         
     def forward(self, x):
         return self.layers(x)
+        
+
     
 
 class NoPoolCNN3(nn.Module): # heavier model compared to 1 - 128 feature maps
@@ -77,6 +81,7 @@ class NoPoolCNN3(nn.Module): # heavier model compared to 1 - 128 feature maps
             nn.Linear(3136*2, 200), # 4 = 3136*2, 5 = 4096*2, 6 = 6400*2, 7 = 7744*2, 8 = 10816*2, 9 = 14400*2, 10 = 16384*2
             nn.ReLU(),
             nn.Linear(200, 10),
+            # activation
             nn.Linear(10, 1)
         )
         
@@ -117,6 +122,7 @@ class NoPoolCNN4(nn.Module): # heaviest model - 256 feature maps
             nn.Linear(3136*4, 200), # 4 = 3136*4, 5 = 4096*4, 6 = 6400*4, 7 = 7744*4, 8 = 10816*4, 9 = 14400*4, 10 = 16384*4
             nn.ReLU(),
             nn.Linear(200, 10),
+            # activation
             nn.Linear(10, 1)
         )
         

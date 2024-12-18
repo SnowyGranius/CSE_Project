@@ -10,7 +10,7 @@ import glob
 import re
 from sklearn.model_selection import train_test_split
 from torchsummary import summary 
-from classes_cnn import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4, NoPoolCNN5
+from CNN.classes_cnn_conv import BasicCNN, MLPCNN, NoPoolCNN1, NoPoolCNN2, NoPoolCNN3, NoPoolCNN4, NoPoolCNN5
 import time
 
 # Default dype is float64. Not working currently on DelftBlue
