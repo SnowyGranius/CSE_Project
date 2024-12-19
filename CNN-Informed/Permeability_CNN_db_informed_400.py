@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from classes_cnn_informed_400 import NoPoolCNN11, NoPoolCNN12, NoPoolCNN13
 import time
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, r2_score
 
 # Default dype is float64. Not working currently on DelftBlue
 torch.set_default_dtype(torch.float64)
@@ -201,7 +202,7 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
     lr_list = [5e-5, 1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
     for lr in lr_list:
         cnn.apply(reset_weights)
-        print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr}')
+        print(f'Using CNN: {cnn.__class__.__name__} with learning rate: {lr:.0e}')
 
         # Define the optimizer
         optimizer = torch.optim.Adam(cnn.parameters(), lr=lr)
@@ -271,7 +272,7 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
             if validation:
                 val_loss_per_batch = []
                 val_R_squared_per_batch = []
-                # cnn.eval() ???
+                cnn.eval()
                 with torch.no_grad():
                     for val_data in torch.utils.data.DataLoader(dataset_val, batch_size=batch_size, shuffle=False, num_workers=0):
                         # Get and prepare inputs by converting to floats
@@ -309,6 +310,7 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
                 if epoch_loss < best_loss:
                     best_loss = epoch_loss
                     best_model = cnn.state_dict()
+            cnn.train()
             
         print('Training process has finished.\n')
 
@@ -332,9 +334,9 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
         axs[1].set_ylabel('R squared')
         axs[1].set_ylim([0, 1])
         axs[1].legend(loc='lower right')
-        plt.suptitle('Loss and training R squared curves during training', y=0.92)
+        plt.suptitle(f'Image size {image_size}, {cnn.__class__.__name__}, lr = {lr:.0e}', y=0.92)
         os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Evolution'), exist_ok=True)
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Evolution/Loss_R_squared-{cnn.__class__.__name__}-{lr}.png'))
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Evolution/Loss_R_squared-{cnn.__class__.__name__}-{lr:.0e}.png'))
 
         # Evaluate model and clear cache
         cnn.load_state_dict(best_model)
@@ -346,15 +348,15 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
             test_inputs = dataset_test.X.to(my_device)
             test_minkowski = dataset_test.minkowski.to(my_device)
             test_predictions = cnn(test_inputs, test_minkowski).cpu().numpy()
+            test_targets = np.array(dataset_test.y)
 
+        # Compute the test R squared and mean squared error
+        mse_loss_test = mean_squared_error(test_targets, test_predictions)
+        R_squared_test = r2_score(test_targets, test_predictions)
+
+        # Inverse transform the permeability values to their original scale
         test_predictions = scaler_permeability.inverse_transform(test_predictions.reshape(-1, 1)).reshape(-1)
-        test_targets = scaler_permeability.inverse_transform(np.array(dataset_test.y).reshape(-1, 1)).reshape(-1)
-
-        # Compute the test R squared
-        ss_residual = np.sum((test_targets - test_predictions)**2)
-        ss_total = np.sum((test_targets - np.mean(test_targets))**2)
-        R_squared_test = 1 - (ss_residual / ss_total)
-        
+        test_targets = scaler_permeability.inverse_transform(test_targets.reshape(-1, 1)).reshape(-1)
         
         # Visualize the ground truth on x axis and predicted values on y axis - logarithmic scale
         fig, ax = plt.subplots(figsize=(8, 8))
@@ -362,13 +364,13 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
         ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
-        ax.set_title('Ground Truth vs Predicted Values')
+        ax.set_title(f'Image size {image_size}, {cnn.__class__.__name__}, lr = {lr:.0e}')
         plt.xscale('log')
         plt.yscale('log')
         ax.legend(loc='lower right')
-        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.5f}\nMSE Loss: {mse_loss_test}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Log_results'), exist_ok=True)
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Log_results/Truth_vs_Predicted-test-logarithmic-{cnn.__class__.__name__}-{lr}.png'))
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Log_results/Truth_vs_Predicted-test-logarithmic-{cnn.__class__.__name__}-{lr:.0e}.png'))
         
         # Visualize the ground truth on x axis and predicted values on y axis - normal scale
         fig, ax = plt.subplots(figsize=(8, 8))
@@ -376,15 +378,15 @@ for cnn in [NoPoolCNN11().to(my_device), NoPoolCNN12().to(my_device), NoPoolCNN1
         ax.plot([test_targets.min(), test_targets.max()], [test_targets.min(), test_targets.max()], 'k--', lw=2, label='Ideal')
         ax.set_xlabel('Ground Truth')
         ax.set_ylabel('Predicted')
-        ax.set_title('Ground Truth vs Predicted Values')
+        ax.set_title(f'Image size {image_size}, {cnn.__class__.__name__}, lr = {lr:.0e}')
         ax.legend(loc='lower right')
-        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.5f}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.05, 0.95, f'Test R^2: {R_squared_test:.5f}\nMSE Loss: {mse_loss_test}', transform=ax.transAxes, fontsize=14, verticalalignment='top')
         os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Normal_results'), exist_ok=True)
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Normal_results/Truth_vs_Predicted-test-{cnn.__class__.__name__}-{lr}.png'))
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Informed-{image_size}-Normal_results/Truth_vs_Predicted-test-{cnn.__class__.__name__}-{lr:.0e}.png'))
         plt.close('all')
 
         # Free up memory to avoid 'CUDA out of memory' error when moving from one iteration to the next
-        #cnn.to(my_device)
+        # cnn.to(my_device)
         del test_inputs
         del test_predictions
         del test_targets

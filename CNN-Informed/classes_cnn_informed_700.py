@@ -35,7 +35,6 @@ class NoPoolCNN11(nn.Module): # first attempt at a no pooling CNN - 64 feature m
             nn.Flatten()
            )
         
-        self.flatten = nn.Flatten()
         self.fc_layers = nn.Sequential(
             nn.Linear(7744 + 3, 200),  # Adjust input size to include 3 additional variables
             nn.ReLU(),
