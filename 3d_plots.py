@@ -24,6 +24,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import scipy.optimize as opt
+from ellipse_marker import ellipse
 plt.rcParams["figure.figsize"] = (16, 9)
 VARIANCE=False
 
@@ -112,7 +113,26 @@ else:
     one_sd_permeability_ellipse = variance_permeability_ellipse * mean_permeability_ellipse
     one_sd_surface_ellipse = variance_surface_ellipse * mean_surface_ellipse
 
- # Calculate standard deviation (sigma) from variance
+all_files = glob.glob(os.path.join(path, "*circle*.csv"))
+df_from_each_file = (pd.read_csv(f).mean(axis=0).to_frame().T for f in all_files)
+concatenated_df_circle = pd.concat(df_from_each_file, ignore_index=True)
+
+# concatenated_df_triangle['Permeability'] = concatenated_df_triangle['Permeability'] * 1e5
+# concatenated_df_triangle['Energy'] = concatenated_df_triangle['Energy'] * 1e5
+
+#EXTRACT VARIANCE FOR TRIANGLE
+
+variance_files = glob.glob(os.path.join(variance_path, "*triangle*.csv"))
+df_from_file = (pd.read_csv(f) for f in variance_files)
+variance_df_circle = pd.concat(df_from_file, ignore_index=True)
+variance_porosity_circle = variance_df_circle['Porosity_variance']
+variance_permeability_circle = variance_df_circle['Permeability_variance']
+variance_surface_circle = variance_df_circle['Surface_variance']
+mean_porosity_circle = variance_df_circle['Porosity_mean']
+mean_permeability_circle = variance_df_circle['Permeability_mean']
+mean_surface_circle = variance_df_circle['Surface_mean']
+
+# Calculate standard deviation (sigma) from variance
 one_sd_porosity_rectangle = variance_porosity_rectangle * mean_porosity_rectangle
 one_sd_permeability_rectangle = variance_permeability_rectangle * mean_permeability_rectangle
 one_sd_surface_rectangle = variance_surface_rectangle * mean_surface_rectangle
@@ -148,8 +168,9 @@ average_samples = pd.DataFrame(average_samples)
 concatenated_df_rectangle['Euler_total'] = 'Rectangle'
 concatenated_df_triangle['Euler_total'] = 'Triangle'
 concatenated_df_ellipse['Euler_total'] = 'Ellipse'
+concatenated_df_circle['Euler_total'] = 'Circle'
 
-concated_df = pd.concat([concatenated_df_rectangle, concatenated_df_triangle, concatenated_df_ellipse], ignore_index=True)
+concated_df = pd.concat([concatenated_df_rectangle, concatenated_df_triangle, concatenated_df_ellipse, concatenated_df_circle], ignore_index=True)
 
 
 ############### PLOTS OF DATA POINTS THEMSELVES ################
@@ -160,12 +181,17 @@ min_color = all_colors.min()
 max_color = all_colors.max()
 sc1 = ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol'], c=concatenated_df_triangle['Permeability'], cmap='winter', marker='^', vmin=min_color, vmax=max_color)
 sc2 = ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol'], c=concatenated_df_rectangle['Permeability'], cmap='winter', marker='s', vmin=min_color, vmax=max_color)
-sc3 = ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol'], c=concatenated_df_ellipse['Permeability'], cmap='winter', marker='o', vmin=min_color, vmax=max_color)
+sc3 = ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol'], c=concatenated_df_ellipse['Permeability'], cmap='winter', marker=ellipse, vmin=min_color, vmax=max_color)
+sc4 = ax.scatter(concatenated_df_circle['Porosity'], concatenated_df_circle['Surface'], concatenated_df_circle['Euler_mean_vol'], c=concatenated_df_circle['Permeability'], cmap='winter', marker='o', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Permeability')
 ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
-ax.set_zlabel('Euler Mean Volume')
-plt.savefig(os.path.join(path, '3d_simple.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+ax.set_zlabel('Euler Characteristic')
+ax.title.set_text('4-D Plot of Porespy with Permeability as Color')
+# create a folder for the plots called Porespy_plots
+if not os.path.exists(os.path.join(script_dir, 'Porespy_plots')):
+    os.makedirs(os.path.join(script_dir, 'Porespy_plots'))
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', '3d_data_points.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
 
 
@@ -190,13 +216,15 @@ min_color = all_colors.min()
 max_color = all_colors.max()
 sc1 = ax.scatter(concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol'], c=concatenated_df_triangle['Permeability'], cmap='winter', marker='^', vmin=min_color, vmax=max_color)
 sc2 = ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol'], c=concatenated_df_rectangle['Permeability'], cmap='winter', marker='s', vmin=min_color, vmax=max_color)
-sc3 = ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol'], c=concatenated_df_ellipse['Permeability'], cmap='winter', marker='o', vmin=min_color, vmax=max_color)
+sc3 = ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol'], c=concatenated_df_ellipse['Permeability'], cmap='winter', marker=ellipse, vmin=min_color, vmax=max_color)
+sc4 = ax.scatter(concatenated_df_circle['Porosity'], concatenated_df_circle['Surface'], concatenated_df_circle['Euler_mean_vol'], c=concatenated_df_circle['Permeability'], cmap='winter', marker='o', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Permeability')
 ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
-ax.set_zlabel('Euler Mean Volume')
+ax.set_zlabel('Euler Characteristic')
 #ax.set_zlim(0, 7000)
-plt.savefig(os.path.join(path, '3d_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+ax.title.set_text('4-D Plot of Porespy with Permeability as Color and Best-fit Plane')
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', '3d_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
 
 
@@ -224,15 +252,18 @@ ydata = concated_df['Permeability']
 concatenated_df_rectangle = concatenated_df_rectangle.sort_values(by='Euler_mean_vol').reset_index(drop=True)
 concatenated_df_triangle = concatenated_df_triangle.sort_values(by='Euler_mean_vol').reset_index(drop=True)
 concatenated_df_ellipse = concatenated_df_ellipse.sort_values(by='Euler_mean_vol').reset_index(drop=True)
+concatenated_df_circle = concatenated_df_circle.sort_values(by='Euler_mean_vol').reset_index(drop=True)
 
 
 xdata_rectangle = [concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Euler_mean_vol']]
 xdata_triangle = [concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Euler_mean_vol']]
 xdata_ellipse = [concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol']]
+xdata_circle = [concatenated_df_circle['Porosity'], concatenated_df_circle['Surface'], concatenated_df_circle['Euler_mean_vol']]
 # xdata_average = [average_samples['Porosity'], average_samples['Surface'], average_samples['Euler_mean_vol']]
 ydata_rectangle = concatenated_df_rectangle['Permeability']
 ydata_triangle = concatenated_df_triangle['Permeability']
 ydata_ellipse = concatenated_df_ellipse['Permeability']
+ydata_circle = concatenated_df_circle['Permeability']
 
 
 
@@ -256,18 +287,20 @@ def interpolate_features(xdata, t, t_interp):
 xdata_rectangle_interpolated = interpolate_features(xdata_rectangle, t, t_interp)
 xdata_triangle_interpolated = interpolate_features(xdata_triangle, t, t_interp)
 xdata_ellipse_interpolated = interpolate_features(xdata_ellipse, t, t_interp)
+xdata_circle_interpolated = interpolate_features(xdata_circle, t, t_interp)
 ydata_rectangle_interpolated = make_interp_spline(t, ydata_rectangle, k=1)(t_interp)
 ydata_triangle_interpolated = make_interp_spline(t, ydata_triangle, k=1)(t_interp)
 ydata_ellipse_interpolated = make_interp_spline(t, ydata_ellipse, k=1)(t_interp)
+ydata_circle_interpolated = make_interp_spline(t, ydata_circle, k=1)(t_interp)
 
 # Calculate the average of interpolated samples
-average_xdata_interp = (xdata_rectangle_interpolated + xdata_triangle_interpolated + xdata_ellipse_interpolated) / 3
-average_ydata_interp = (ydata_rectangle_interpolated + ydata_triangle_interpolated + ydata_ellipse_interpolated) / 3
+average_xdata_interp = (xdata_rectangle_interpolated + xdata_triangle_interpolated + xdata_ellipse_interpolated + xdata_circle_interpolated) / 4
+average_ydata_interp = (ydata_rectangle_interpolated + ydata_triangle_interpolated + ydata_ellipse_interpolated + ydata_circle_interpolated) / 4
 
 
 ################ APPLYING KOZENY-CARMAN ################
-average_xdata = (np.array(xdata_rectangle) + np.array(xdata_triangle) + np.array(xdata_ellipse)) / 3
-average_ydata = (np.array(ydata_rectangle) + np.array(ydata_triangle) + np.array(ydata_ellipse)) / 3
+average_xdata = (np.array(xdata_rectangle) + np.array(xdata_triangle) + np.array(xdata_ellipse) + np.array(xdata_circle)) / 4
+average_ydata = (np.array(ydata_rectangle) + np.array(ydata_triangle) + np.array(ydata_ellipse) + np.array(ydata_circle)) / 4
 
 popt_old, _ = opt.curve_fit(kozeny_carman, [average_xdata[0], average_xdata[1], average_xdata[2]], average_ydata)
 popt_new, _ = opt.curve_fit(kozeny_carman_new, [average_xdata[0], average_xdata[1], average_xdata[2]], average_ydata)
@@ -291,19 +324,21 @@ ax = fig.add_subplot(111, projection='3d')
 all_colors = pd.concat([xdata_rectangle[2], xdata_triangle[2], xdata_ellipse[2]])
 min_color = all_colors.min()
 max_color = all_colors.max()
-ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], k_old, label='Kozeny-Carman Fit', color='y')
-ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], k_new, label='New Kozeny-Carman Fit', color='r')
+ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], k_old, label='First Kozeny-Carman Fit', color='y')
+ax.plot(average_xdata_interp['Porosity'], average_xdata_interp['Surface'], k_new, label='Improved Kozeny-Carman Fit', color='r')
 sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdata_rectangle[2], marker='s', cmap='winter', vmin=min_color, vmax=max_color)
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
-sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
-cbar = plt.colorbar(sc1, ax=ax, label='Euler')
+sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker=ellipse, cmap='winter', vmin=min_color, vmax=max_color)
+sc4 = ax.scatter(xdata_circle[0], xdata_circle[1], ydata_circle, c=xdata_circle[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
+cbar = plt.colorbar(sc1, ax=ax, label='Euler Characteristic')
 
 ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
 ax.set_zlabel('Permeability')
 ax.legend()
 ax.view_init(elev=20, azim=205)
-plt.savefig(os.path.join(path, 'kozeny_line.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+ax.title.set_text('4-D Plot of Porespy with Euler Characteristic as Color and Kozeny-Carman Fit')
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'kozeny_line.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
 
 
@@ -367,8 +402,9 @@ max_color = all_colors.max()
 # sc = ax.scatter(X, Y, Z, c=concated_df['Euler_mean_vol'], cmap='viridis', label='Data Points')
 sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdata_rectangle[2], marker='s', cmap='winter', vmin=min_color, vmax=max_color)
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
-sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
-cbar = plt.colorbar(sc1, ax=ax, label='Euler')
+sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker=ellipse, cmap='winter', vmin=min_color, vmax=max_color)
+sc4 = ax.scatter(xdata_circle[0], xdata_circle[1], ydata_circle, c=xdata_circle[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
+cbar = plt.colorbar(sc1, ax=ax, label='Euler Characteristic')
 # ax.plot_surface(x_mesh, y_mesh, z_mesh_poly, color='red', alpha=0.5, edgecolor='w', label='Fitted Polynomial Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
 #ax.plot_surface(x_mesh, y_mesh, z_mesh_power, color='green', alpha=0.5, edgecolor='w', label='Fitted Power Law Surface')
@@ -385,12 +421,13 @@ ax.set_xlabel('Porosity')
 ax.set_ylabel('Surface')
 ax.set_zlabel('Permeability')
 ax.view_init(elev=20, azim=135)
+ax.title.set_text('4-D Plot of Porespy with Euler Characteristic as Color and Exponential Surface')
 plt.legend()
 
 # Add RMSE text to the plot
 ax.text2D(0.05, 0.95, f"RMSE: {10**5*rmse:.10f}e-5", transform=ax.transAxes)
 
-plt.savefig(os.path.join(path, 'kozeny_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'kozeny_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
 
 
@@ -400,20 +437,22 @@ fig = plt.figure()
 ax = fig.add_subplot()
 ax.scatter(average_xdata[0], km_list, label='Kozeny-Carman')
 ax.set_xlabel('Porosity')
-ax.set_ylabel('k_m')
+ax.set_ylabel('$k_m$')
 ax.grid()
 plt.legend()
-plt.savefig(os.path.join(path, 'km_evolution.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+ax.title.set_text('Evolution of $k_m$ with Porosity')
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'km_evolution.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
 
 fig = plt.figure()
 ax = fig.add_subplot()
 ax.scatter(average_xdata[0], average_ydata)
-ax.semilogy(average_xdata[0], k_new_evolution, label='fitted')
-ax.semilogy(average_xdata[0], k_star, label='theoretical')
+ax.semilogy(average_xdata[0], k_new_evolution, label='Fitted')
+ax.semilogy(average_xdata[0], k_star, label='Theoretical')
 ax.set_xlabel('Porosity')
-ax.set_ylabel('k')
+ax.set_ylabel('$k$')
 ax.grid()   
 plt.legend()
-plt.savefig(os.path.join(path, 'fitted_theoretical.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+ax.title.set_text('Fitted, Theoretical and Actual $k_m$ values with Porosity')
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'fitted_theoretical.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
