@@ -138,6 +138,7 @@ dataset_train = PermeabilityDataset(X=train_images, y=train_permeability)
 dataset_test = PermeabilityDataset(X=test_images, y=test_permeability)
 
 if validation:
+    val_permeability = np.log(val_permeability)
     val_permeability = scaler_permeability.transform(val_permeability.reshape(-1, 1)).flatten()
     dataset_val = PermeabilityDataset(X=val_images, y=val_permeability)
 
@@ -292,8 +293,8 @@ for cnn in [NoPoolCNN1().to(my_device)]:
         axs[1].set_ylim([0, 1])
         axs[1].legend(loc='lower right')
         plt.suptitle(f'Image size {image_size}, {cnn.__class__.__name__}, lr = {lr:.0e}', y=0.92)
-        os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Pure-{image_size}-Evolution'), exist_ok=True)
-        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Pure-{image_size}-Evolution/Loss_R_squared-{cnn.__class__.__name__}-{lr:.0e}.png'))
+        os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Evolution'), exist_ok=True)
+        plt.savefig(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Evolution/Loss_R_squared-{cnn.__class__.__name__}-{lr:.0e}.png'))
 
         # Save the best model to a file in the current folder
         os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), f'Models'), exist_ok=True)

@@ -74,7 +74,7 @@ concated_df = pd.concat([concatenated_df_rectangle, concatenated_df_triangle, co
 print(concated_df)
 
 #sns.pairplot(concated_df, vars=['Porosity','Surface','Euler_mean_vol','Permeability','Energy'], hue='Euler_total')
-sns.pairplot(concated_df, vars=['Porosity','Surface','Euler Characteristic','Permeability','Energy'], markers=['s','^', ellipse, 'o'], hue='Shape', diag_kind='kde')
+# sns.pairplot(concated_df, vars=['Porosity','Surface','Euler Characteristic','Permeability','Energy'], markers=['s','^', ellipse, 'o'], hue='Shape', diag_kind='kde')
 
 # save the dataframe concated_df to a csv file
 # concated_df.to_csv('C:\\Users\\ionst\\Documents\\Fisiere_Python\\Proiect\\Data\\Datasets\\Threshold_homogenous_diamater_wide_RCP\\concatenated_df.csv', index=False)
@@ -82,4 +82,12 @@ sns.pairplot(concated_df, vars=['Porosity','Surface','Euler Characteristic','Per
 # Display the plot
 # save the plot in the folder called Porespy_plots
 # plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'initial_analysis.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+#plot surface vs permeability
+sns.scatterplot(data=concated_df, x='Porosity', y='Permeability', hue='Shape', style='Shape', markers=['s','^', ellipse, 'o'])
+plt.xlabel('Porosity')
+plt.ylabel('Permeability')
+plt.title('Porosity vs Permeability')
+plt.grid()
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'Porosity_vs_Permeability.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
