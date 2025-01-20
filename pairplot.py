@@ -5,6 +5,10 @@ import pandas as pd
 import os
 import glob
 from ellipse_marker import ellipse
+import scipy.optimize as opt
+from scipy.interpolate import griddata
+from scipy.interpolate import make_interp_spline
+from scipy.interpolate import CubicSpline
 # A program that reads data from a csv file and compares features using a pairplot
 
 # # Read the data from the csv file
@@ -71,7 +75,7 @@ concatenated_df_circle['Energy'] = concatenated_df_circle['Energy']
 # sns.pairplot(concatenated_df_circle, vars=['Porosity','Surface','Euler_mean_vol','Permeability','Energy'], markers='o', diag_kind='kde')
 
 concated_df = pd.concat([concatenated_df_rectangle, concatenated_df_triangle, concatenated_df_ellipse, concatenated_df_circle], ignore_index=True)
-print(concated_df)
+# print(concated_df)
 
 #sns.pairplot(concated_df, vars=['Porosity','Surface','Euler_mean_vol','Permeability','Energy'], hue='Euler_total')
 # sns.pairplot(concated_df, vars=['Porosity','Surface','Euler Characteristic','Permeability','Energy'], markers=['s','^', ellipse, 'o'], hue='Shape', diag_kind='kde')
@@ -83,11 +87,49 @@ print(concated_df)
 # save the plot in the folder called Porespy_plots
 # plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'initial_analysis.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 
-#plot surface vs permeability
+
+
+def exponential_line(x, a, b):
+    return a * np.exp(b*x)
+
+popt, _ = opt.curve_fit(exponential_line, concated_df['Porosity'], concated_df['Permeability'])
+a, b = popt
+
+concated_df = concated_df.sort_values(by='Porosity').reset_index(drop=True)
+
+#plot porosity vs permeability and exponential line
 sns.scatterplot(data=concated_df, x='Porosity', y='Permeability', hue='Shape', style='Shape', markers=['s','^', ellipse, 'o'])
+plt.plot(concated_df['Porosity'], exponential_line(concated_df['Porosity'], a, b), color='black', linestyle='--')
 plt.xlabel('Porosity')
 plt.ylabel('Permeability')
-plt.title('Porosity vs Permeability')
+# plt.title('Porosity vs Permeability')
 plt.grid()
 plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'Porosity_vs_Permeability.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.show()
+
+popt, _ = opt.curve_fit(exponential_line, concated_df['Surface'], concated_df['Permeability'], p0=(1, -0.01))
+a, b = popt
+print(a, b)
+
+concated_df = concated_df.sort_values(by='Surface').reset_index(drop=True)
+print(concated_df['Surface'])
+
+#plot surface vs permeability and exponential line
+sns.scatterplot(data=concated_df, x='Surface', y='Permeability', hue='Shape', style='Shape', markers=['s','^', ellipse, 'o'])
+plt.plot(concated_df['Surface'], exponential_line(concated_df['Surface'], a, b), color='black', linestyle='--')
+plt.xlabel('Surface')
+plt.ylabel('Permeability')
+# plt.title('Surface vs Permeability')
+plt.grid()
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'Surface_vs_Permeability.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.show()
+
+#plot euler characteristic vs permeability and exponential line
+sns.scatterplot(data=concated_df, x='Euler Characteristic', y='Permeability', hue='Shape', style='Shape', markers=['s','^', ellipse, 'o'])
+# plt.plot(concated_df['Surface'], exponential_line(concated_df['Surface'], a, b), color='black', linestyle='--')
+plt.xlabel('Euler Characteristic')
+plt.ylabel('Permeability')
+# plt.title('Surface vs Permeability')
+plt.grid()
+plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'Euler_vs_Permeability.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()

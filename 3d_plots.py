@@ -161,7 +161,7 @@ def plot_box_and_whisker(ax, x, y, z, sigma_x, sigma_y, sigma_z, color):
 ################ CALCULATE THE AVERAGE OF EVERY PF ################
 average_samples = []
 for i in range(len(concatenated_df_rectangle)):
-    avg_sample = (concatenated_df_rectangle.iloc[i] + concatenated_df_triangle.iloc[i] + concatenated_df_ellipse.iloc[i]) / 3
+    avg_sample = (concatenated_df_rectangle.iloc[i] + concatenated_df_triangle.iloc[i] + concatenated_df_ellipse.iloc[i] + concatenated_df_circle.iloc[i]) / 4
     average_samples.append(avg_sample)
 average_samples = pd.DataFrame(average_samples)
 
@@ -219,11 +219,16 @@ sc2 = ax.scatter(concatenated_df_rectangle['Porosity'], concatenated_df_rectangl
 sc3 = ax.scatter(concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Euler_mean_vol'], c=concatenated_df_ellipse['Permeability'], cmap='winter', marker=ellipse, vmin=min_color, vmax=max_color)
 sc4 = ax.scatter(concatenated_df_circle['Porosity'], concatenated_df_circle['Surface'], concatenated_df_circle['Euler_mean_vol'], c=concatenated_df_circle['Permeability'], cmap='winter', marker='o', vmin=min_color, vmax=max_color)
 cbar = plt.colorbar(sc1, ax=ax, label='Permeability')
-ax.set_xlabel('Porosity')
-ax.set_ylabel('Surface')
-ax.set_zlabel('Euler Characteristic')
+cbar.ax.set_ylabel('Permeability', rotation=90, labelpad=10, fontsize=17)
+cbar.ax.tick_params(labelsize=14)  # Set colorbar text size
+ax.set_xlabel('Porosity', labelpad=10, fontsize=17)
+ax.set_ylabel('Surface', labelpad=10, fontsize=17)
+ax.set_zlabel('Euler Characteristic', labelpad=12, fontsize=17)
+ax.tick_params(axis='both', which='major', labelsize=14)  # Set axis number size
+# ax.title.set_text('4-D Plot of Porespy with Euler Characteristic as Color and Exponential Surface')
+# ax.title.set_fontsize(20)
 #ax.set_zlim(0, 7000)
-ax.title.set_text('4-D Plot of Porespy with Permeability as Color and Best-fit Plane')
+#ax.title.set_text('4-D Plot of Porespy with Permeability as Color and Best-fit Plane')
 plt.savefig(os.path.join(script_dir, 'Porespy_plots', '3d_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
 
@@ -404,28 +409,32 @@ sc1 = ax.scatter(xdata_rectangle[0], xdata_rectangle[1], ydata_rectangle, c=xdat
 sc2 = ax.scatter(xdata_triangle[0], xdata_triangle[1], ydata_triangle, c=xdata_triangle[2], marker='^', cmap='winter', vmin=min_color, vmax=max_color)
 sc3 = ax.scatter(xdata_ellipse[0], xdata_ellipse[1], ydata_ellipse, c=xdata_ellipse[2], marker=ellipse, cmap='winter', vmin=min_color, vmax=max_color)
 sc4 = ax.scatter(xdata_circle[0], xdata_circle[1], ydata_circle, c=xdata_circle[2], marker='o', cmap='winter', vmin=min_color, vmax=max_color)
-cbar = plt.colorbar(sc1, ax=ax, label='Euler Characteristic')
+cbar = plt.colorbar(sc1, ax=ax)
+cbar.ax.set_ylabel('Euler Characteristic', rotation=90, labelpad=10, fontsize=17)
+cbar.ax.tick_params(labelsize=14)  # Set colorbar text size
 # ax.plot_surface(x_mesh, y_mesh, z_mesh_poly, color='red', alpha=0.5, edgecolor='w', label='Fitted Polynomial Surface')
 ax.plot_surface(x_mesh, y_mesh, z_mesh_exp, color='yellow', alpha=0.5, edgecolor='w', label='Fitted Exponential Surface')
 #ax.plot_surface(x_mesh, y_mesh, z_mesh_power, color='green', alpha=0.5, edgecolor='w', label='Fitted Power Law Surface')
 if VARIANCE:
-        plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], one_sd_porosity_rectangle, one_sd_surface_rectangle, one_sd_permeability_rectangle, 'blue')
-        plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], one_sd_porosity_triangle, one_sd_surface_triangle, one_sd_permeability_triangle, 'red')
-        if (sub_path == 'Heterogenous_samples'):
-            pass
-        else:
-            plot_box_and_whisker(ax, concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], one_sd_porosity_ellipse, one_sd_surface_ellipse, one_sd_permeability_ellipse, 'green')
+    plot_box_and_whisker(ax, concatenated_df_rectangle['Porosity'], concatenated_df_rectangle['Surface'], concatenated_df_rectangle['Permeability'], one_sd_porosity_rectangle, one_sd_surface_rectangle, one_sd_permeability_rectangle, 'blue')
+    plot_box_and_whisker(ax, concatenated_df_triangle['Porosity'], concatenated_df_triangle['Surface'], concatenated_df_triangle['Permeability'], one_sd_porosity_triangle, one_sd_surface_triangle, one_sd_permeability_triangle, 'red')
+    if (sub_path == 'Heterogenous_samples'):
+        pass
+    else:
+        plot_box_and_whisker(ax, concatenated_df_ellipse['Porosity'], concatenated_df_ellipse['Surface'], concatenated_df_ellipse['Permeability'], one_sd_porosity_ellipse, one_sd_surface_ellipse, one_sd_permeability_ellipse, 'green')
 
 # Color bar and labels
-ax.set_xlabel('Porosity')
-ax.set_ylabel('Surface')
-ax.set_zlabel('Permeability')
+ax.set_xlabel('Porosity', labelpad=10, fontsize=17)
+ax.set_ylabel('Surface', labelpad=10, fontsize=17)
+ax.set_zlabel('Permeability', fontsize=17)
+ax.tick_params(axis='both', which='major', labelsize=14)  # Set axis number size
 ax.view_init(elev=20, azim=135)
-ax.title.set_text('4-D Plot of Porespy with Euler Characteristic as Color and Exponential Surface')
-plt.legend()
+# ax.title.set_text('4-D Plot of Porespy with Euler Characteristic as Color and Exponential Surface')
+# ax.title.set_fontsize(20)
+plt.legend(fontsize=14)
 
 # Add RMSE text to the plot
-ax.text2D(0.05, 0.95, f"RMSE: {10**5*rmse:.10f}e-5", transform=ax.transAxes)
+ax.text2D(0.05, 0.95, f"RMSE: {10**5*rmse:.10f}e-5", transform=ax.transAxes, fontsize=14)
 
 plt.savefig(os.path.join(script_dir, 'Porespy_plots', 'kozeny_surface.png'), dpi=300, bbox_inches='tight', pad_inches=0.1)
 plt.show()
