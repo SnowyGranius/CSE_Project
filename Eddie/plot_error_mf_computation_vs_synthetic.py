@@ -14,7 +14,9 @@ M1_theoretical_values = [44.773683110127, 40.362048941883, 34.654736584218995, 3
 M2_theoretical_values = [1442, 1442, 1442, 1442]
 
 M0_measured_values, M1_measured_values, M2_measured_values = array_creation()
+print(M0_measured_values, M1_measured_values, M2_measured_values)
 
+'''
 # X-axis positions
 x = np.arange(1000, 11000, 1000)
 
@@ -82,3 +84,4 @@ ax.legend()
 
 # Show plot
 plt.show()
+'''

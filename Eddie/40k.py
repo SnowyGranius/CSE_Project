@@ -8,7 +8,7 @@ import pandas as pd
 #b=10
 #p=0.55
 resolution=800
-im_nrs=20
+im_nrs=10
 
 script_dir = os.path.dirname(__file__)
 base_path=script_dir
@@ -17,8 +17,8 @@ path=os.path.join(base_path, sub_path)
 #path=os.path.join(base_path, sub_path, f'blobiness_{b}_porosity_{p}')
 
 
-for p in np.linspace(0.55, 0.95, 10):
-    for b in np.linspace(10, 14, 5):
+for p in np.linspace(0.65, 0.65, 1):
+    for b in np.linspace(10, 10, 1):
         seed=np.random.randint(0, 40000)
         new_folder = f'blobiness_{b}_porosity_{p}_{seed}'
         new_folder_path = os.path.join(path, new_folder)
