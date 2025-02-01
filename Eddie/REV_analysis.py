@@ -13,8 +13,8 @@ make_subfolder=False
 image_generation=False
 
 #Keep blobiness fixed
-b=15
-p=0.95
+b=10
+p=0.75
 
 #subsample nr per side
 im_nrs=20
@@ -147,37 +147,66 @@ if DATA_ANALYSIS:
         plt.show()
         fig, axes = plt.subplots(3, 1, figsize=(10, 15), sharex=True)
         # Plot M0
+        avg_M0_list=[[],[]]
         ax = axes[0]
         ax.set_title(f'Mean M0 vs Resolution, blobiness={b}, porosity={p}, subimages={im_nrs}')
         for resolution in resolutions:
             filtered_data = data[data['Resolution'] == resolution]
             avg_M0 = filtered_data.groupby('Resolution')['M0'].mean()
-            ax.plot(avg_M0.index/im_nrs, avg_M0.values, marker='o', label=f'Resolution {resolution}')
+            avg_M0_list[0].append(avg_M0.index/im_nrs)
+            avg_M0_list[1].append(avg_M0.values)
+        ax.plot(avg_M0_list[0], avg_M0_list[1], marker='o', linestyle='-', label=f'Resolution {resolution}')
         ax.set_ylabel('Mean M0')
+        # Add dashed line for 5% error margin
+        avg_M0_final = np.array(avg_M0_list[1])[-1]
+        error_5_percent = avg_M0_final * 0.05
+        #ax.axhline(avg_M0_final + error_5_percent, color='r', linestyle='--', label='5% Error Margin')
+        ax.axhline(avg_M0_final - error_5_percent, color='r', linestyle='--')
         #ax.legend()
-        
+
         # Plot M1
+        avg_M1_list=[[],[]]
         ax = axes[1]
         ax.set_title('Mean M1 vs Resolution')
         for resolution in resolutions:
             filtered_data = data[data['Resolution'] == resolution]
             avg_M1 = filtered_data.groupby('Resolution')['M1'].mean()
             subimage_resolution = resolution // int(np.sqrt(filtered_data['Subsamples'].iloc[0]))
-            ax.plot(avg_M1.index/im_nrs, avg_M1.values/subimage_resolution, marker='o', label=f'Resolution {resolution}')
+            avg_M1_list[0].append(avg_M1.index/im_nrs)
+            avg_M1_list[1].append(avg_M1.values/subimage_resolution)
+        ax.plot(avg_M1_list[0], avg_M1_list[1], marker='o', linestyle='-', label=f'Resolution {resolution}')
         ax.set_ylabel('Mean M1')
+        # Add dashed line for 5% error margin
+        avg_M1_final = np.array(avg_M1_list[1])[-1]
+        error_5_percent = avg_M1_final * 0.05
+        #ax.axhline(avg_M1_final + error_5_percent, color='r', linestyle='--', label='5% Error Margin')
+        ax.axhline(avg_M1_final - error_5_percent, color='r', linestyle='--')
         #ax.legend()
 
         # Plot M2
+        avg_M2_list=[[],[]]
         ax = axes[2]
         ax.set_title('Mean M2 vs Resolution')
+        i=0
         for resolution in resolutions:
             filtered_data = data[data['Resolution'] == resolution]
             avg_M2 = filtered_data.groupby('Resolution')['M2'].mean()
-            ax.plot(avg_M2.index/im_nrs, avg_M2.values, marker='o', label=f'Resolution {resolution}')
+            avg_M2_list[0].append(avg_M2.index/im_nrs)
+            avg_M2_list[1].append(avg_M2.values)
+        ax.plot(avg_M2_list[0], avg_M2_list[1], marker='o', linestyle='-', label=f'Resolution {resolution}')
         ax.set_xlabel('Resolution')
         ax.set_ylabel('Mean M2')
+        # Add dashed line for 5% error margin
+        avg_M2_final = np.array(avg_M2_list[1])[-1]
+        error_5_percent = avg_M2_final * 0.05
+        #ax.axhline(avg_M0_final + error_5_percent, color='r', linestyle='--', label='5% Error Margin')
+        ax.axhline(avg_M2_final - error_5_percent, color='r', linestyle='--')
         #ax.legend()
-
+        for ax in axes:
+            ax.title.set_fontsize(16)
+            ax.xaxis.label.set_fontsize(16)
+            ax.yaxis.label.set_fontsize(16)
+            ax.tick_params(axis='both', which='major', labelsize=14)
         plt.tight_layout()
         plt.show()
 
