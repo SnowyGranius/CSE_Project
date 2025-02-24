@@ -465,8 +465,8 @@ def automatic_process_regression(X_train, y_train, X_test, y_test):
     return best_models
 
 
-#pathlist = ['Eddie/Porespy_homogenous_diameter', 'Eddie/Heterogenous_samples', 'Eddie/Threshold_homogenous_diameter_small_RCP', 'Eddie/Threshold_homogenous_diameter_wide_RCP']
-pathlist = ['Eddie/Porespy_homogenous_diameter']
+#pathlist = ['Porespy_homogenous_diameter', 'Heterogenous_samples', 'Threshold_homogenous_diameter_small_RCP', 'Threshold_homogenous_diameter_wide_RCP']
+pathlist = ['Porespy_homogenous_diameter']
 
 for path in pathlist:
     all_files = glob.glob(os.path.join(path, '*.csv'))
