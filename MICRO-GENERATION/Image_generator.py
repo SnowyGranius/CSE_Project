@@ -16,7 +16,7 @@ sub_path='DAT_files'
 path=os.path.join(base_path, sub_path)
 #path=os.path.join(base_path, sub_path, f'blobiness_{b}_porosity_{p}')
 
-
+#adjust loop parameters to desired values
 for p in np.linspace(0.65, 0.65, 1):
     for b in np.linspace(10, 10, 1):
         seed=np.random.randint(0, 40000)
