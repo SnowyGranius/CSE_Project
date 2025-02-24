@@ -29,7 +29,7 @@ def read_circle_data(file_path):
             y_coord = np.append(y_coord, [y])
             radii = np.append(radii, [radius])
 
-def generate_image(image_name, image_shape=(2000, 2000)):
+def generate_image(image_name, image_shape):
     # Create a blank binary image
     image = np.zeros(image_shape, dtype=np.uint8)
 
@@ -129,8 +129,8 @@ def generate_image(image_name, image_shape=(2000, 2000)):
     # create the folder if it does not exist
     plt.imsave(f'{current_directory}/Converge-study-{image_shape[0]}/pf_{packing_fraction}_triangle_{model_name}.png', image, cmap='gray')
 
-Models = np.arange(1, 26, 1)
-pfs = ['0.1', '0.2', '0.3', '0.4', '0.5']
+Models = np.arange(2, 3, 1)
+pfs = ['0.2']
 # Models = range(1, 26)
 # pfs = np.arange(1, 11, 1) / 10
 # print(pfs)
