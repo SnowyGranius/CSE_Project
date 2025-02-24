@@ -5,7 +5,8 @@ from skimage.measure import perimeter, perimeter_crofton
 from skimage.measure import euler_number
 import os
 import pandas as pd
-resolution_spacing = 80
+
+resolution_spacing=40
 
 def read_dat_file(file_path):
     with open(file_path, 'r') as file:
@@ -20,7 +21,7 @@ def reconstruct_image(lines):
 script_dir = os.path.dirname(__file__) # <-- absolute dir the script is in
 base_path=script_dir
 sub_path='DAT_files'
-folder='blobiness_10.0_porosity_0.65_2910'
+folder='blobiness_10.0_porosity_0.55_25533'
 
 path=os.path.join(base_path, sub_path, folder)
 file_to_read='subimage_0_0.dat'
