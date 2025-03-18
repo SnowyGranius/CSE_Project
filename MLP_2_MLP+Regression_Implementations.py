@@ -84,6 +84,40 @@ def parity_plot(targets_original, targets_predicted, color):
     plt.grid(True)
     plt.axis('equal')
 
+def plot_log(targets_original, targets_predicted, color, scaled):
+    if scaled == True:
+        targets_predicted = scaler_y.inverse_transform(targets_predicted.reshape(-1, 1)).flatten()
+        targets_original = scaler_y.inverse_transform(targets_original.reshape(-1, 1)).flatten()
+        
+    # plt.gca().xaxis.set_major_formatter(LogFormatter())
+    # plt.gca().yaxis.set_major_formatter(LogFormatter())
+    
+    r2 = r2_score(targets_original, targets_predicted)
+    mse = mean_squared_error(targets_original, targets_predicted)
+    
+    # mse = mean_squared_error(test_targets, predicted_labels)
+    # r2 = r2_score(test_targets, predicted_labels)
+    
+    print(f"Mean Squared Error: {mse:.15f}")
+    print(f"R2 Score: {r2:.6f}")
+    plt.figure(figsize=fig_size)
+        
+    plt.scatter(targets_original, targets_predicted, alpha=0.6, color=color, label=f'R²: {r2:.5f}\nMSE (scaled data): {mse:.3e}')
+    plt.plot([min(targets_original), max(targets_original)],
+             [min(targets_original), max(targets_original)], color='r', linestyle='--', label='Parity Line')
+
+    plt.xscale('log')
+    plt.yscale('log')
+
+    plt.xlabel('True Permeability', fontsize = font_size)
+    plt.ylabel('Predicted Permeability', fontsize = font_size)
+    plt.title("Parity Plot MLP", fontsize = font_size + 2)    
+    plt.legend(fontsize = font_size - 2, loc='lower right')
+    plt.grid(True)
+    plt.axis('equal')
+    
+    plt.savefig('Parity_MLP', dpi=300)
+
 def cross_validate_mlp(X_train_init, y_train_init, X_test_init, y_test_init, model, k, shuffle, n_epochs, batch_size, learning_rate):
     start_time = time.time()
 
